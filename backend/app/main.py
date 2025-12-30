@@ -58,13 +58,11 @@ async def root():
     }
 
 
-# API v1 routes will be added here
-# Example:
-# from app.api.v1.routes import coaches, jobs, admin, brands
-# app.include_router(coaches.router, prefix="/api/v1")
-# app.include_router(jobs.router, prefix="/api/v1")
-# app.include_router(admin.router, prefix="/api/v1")
-# app.include_router(brands.router, prefix="/api/v1")
+# API v1 routes
+from app.api.v1.routes import coaches, jobs
+
+app.include_router(coaches.router, prefix="/api/v1")
+app.include_router(jobs.router, prefix="/api/v1")
 
 
 if __name__ == "__main__":

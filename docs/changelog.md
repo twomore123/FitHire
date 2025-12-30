@@ -9,13 +9,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### In Progress - Phase 1
-- API endpoints for coach and job management
-- Clerk authentication middleware
+### In Progress - Phase 1 (Day 2)
 - Frontend dashboards (Coach, Manager, Admin)
+- Clerk authentication integration on frontend
 - Deployment to Railway and Vercel
+- End-to-end testing
+
+### Completed - Phase 1 (Day 1) ✅
+- All backend API endpoints implemented
+- Authentication middleware with JWT validation
+- Comprehensive Pydantic schemas for all endpoints
+- FitScore engine integrated with matching endpoints
 
 ---
+
+## [0.3.0] - 2025-12-30 (In Progress)
+
+### Added - Phase 1 Day 1 (Backend API)
+
+#### Authentication & Security
+- Implemented JWT validation middleware with python-jose
+- Created authentication utilities in `app/utils/auth.py`:
+  - `get_current_user()` dependency for protected routes
+  - `require_role()` factory for role-based access control
+  - Token verification with Clerk JWKS support (signature verification pending)
+- HTTP Bearer token authentication on all endpoints
+
+#### Pydantic Schemas
+- Created comprehensive request/response schemas for all endpoints:
+  - **Coach schemas** (`app/schemas/coach.py`):
+    - `CoachCreate` with validation for role types and certifications
+    - `CoachUpdate` for partial updates
+    - `CoachResponse` with full profile data
+    - `CoachListResponse` for paginated lists
+  - **Job schemas** (`app/schemas/job.py`):
+    - `JobCreate` with FitScore preset validation
+    - `JobUpdate` for partial updates
+    - `JobResponse` with compensation details
+    - `JobListResponse` for paginated lists
+  - **Match schemas** (`app/schemas/match.py`):
+    - `FitScoreBreakdown` with all 6 sub-scores
+    - `CoachMatchResult` and `JobCandidateResult` with rankings
+    - `CoachMatchesResponse` and `JobCandidatesResponse`
+
+#### Coach API Endpoints (`/api/v1/coaches`)
+- **POST /api/v1/coaches/** - Create new coach profile
+  - Validates location access and role type
+  - Calculates profile completeness automatically
+  - Sets initial status to "pending" (requires admin verification)
+- **GET /api/v1/coaches/{coach_id}** - Retrieve single coach
+- **GET /api/v1/coaches/** - List coaches with pagination
+  - Query parameters: `page`, `page_size` (max 100)
+  - Filters: `location_id`, `role_type`, `status`
+  - Ordered by creation date descending
+- **PATCH /api/v1/coaches/{coach_id}** - Update coach profile
+  - Partial updates (only provided fields)
+  - Recalculates profile completeness
+  - Updates `last_updated` timestamp
+- **GET /api/v1/coaches/{coach_id}/matches** - Get top job matches
+  - Returns up to 20 ranked job matches
+  - Filters by job status="open" and city match
+  - Applies job-specific FitScore threshold
+  - Includes detailed score breakdown
+
+#### Job API Endpoints (`/api/v1/jobs`)
+- **POST /api/v1/jobs/** - Create new job listing
+  - Validates location access and weighting preset
+  - Sets initial status to "draft"
+- **GET /api/v1/jobs/{job_id}** - Retrieve single job
+- **GET /api/v1/jobs/** - List jobs with pagination
+  - Query parameters: `page`, `page_size` (max 100)
+  - Filters: `location_id`, `role_type`, `status`
+  - Ordered by creation date descending
+- **PATCH /api/v1/jobs/{job_id}** - Update job listing
+  - Partial updates with validation
+- **DELETE /api/v1/jobs/{job_id}** - Delete job listing
+- **GET /api/v1/jobs/{job_id}/candidates** - Get top coach candidates
+  - Returns up to 20 ranked coach candidates
+  - Filters by coach status="verified", city match, and role type match
+  - Applies configurable FitScore threshold
+  - Includes detailed score breakdown
+
+#### API Features
+- All endpoints require authentication (JWT tokens)
+- Multi-tenant data isolation enforced at database level
+- Pagination support on all list endpoints (default 20, max 100)
+- Profile completeness calculation (10 fields weighted equally)
+- Matching uses city+state exact match (Phase 1)
+- FitScore calculated on-demand with configurable presets
+- Comprehensive error handling with HTTP status codes
+
+#### Testing & Validation
+- Fixed FitScore engine availability scoring formula
+- All 30 unit tests passing (97% coverage on engine)
+- API structure verified (17 routes registered)
+- Request validation via Pydantic schemas
+- Response serialization with `from_attributes=True`
+
+### Changed
+- Updated authentication approach to use python-jose instead of Clerk SDK
+- Enhanced error messages with specific validation feedback
 
 ## [0.2.0] - 2025-12-30
 

@@ -264,7 +264,7 @@ class TestEngagementScoring:
         }
 
         score = self.engine._score_engagement(coach)
-        assert score == 1.0
+        assert score == pytest.approx(1.0, abs=0.001)
 
 
 class TestFullMatchScore:

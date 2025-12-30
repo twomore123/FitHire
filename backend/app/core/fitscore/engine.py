@@ -199,7 +199,7 @@ class FitScoreEngine:
         # Bonus for additional availability (flexibility)
         extra_slots = len(coach_slots - required_slots)
         # Max bonus of 0.3 for 10+ extra slots
-        flexibility_bonus = min(extra_slots / 10.0, 0.3)
+        flexibility_bonus = min(extra_slots / 10.0, 1.0) * 0.3
 
         return base_score + flexibility_bonus
 

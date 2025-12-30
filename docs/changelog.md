@@ -9,14 +9,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned
-- Coach profile creation and management
-- Job listing creation and management
-- FitScore calculation engine
-- Top 20 match display
-- Admin verification workflow
-- Multi-unit organizational hierarchy
-- Threshold-based filtering
+### In Progress - Phase 1
+- API endpoints for coach and job management
+- Clerk authentication middleware
+- Frontend dashboards (Coach, Manager, Admin)
+- Deployment to Railway and Vercel
+
+---
+
+## [0.2.0] - 2025-12-30
+
+### Added - Phase 1 (Backend Foundation)
+
+#### Monorepo Structure
+- Set up monorepo with `/backend` and `/frontend` folders
+- Configured Poetry for Python dependency management
+- Configured npm for Node.js dependency management
+- Added comprehensive README files for both services
+- Created environment variable templates for backend and frontend
+
+#### Database Schema
+- Implemented 9 SQLAlchemy models for multi-tenant architecture:
+  - `Brand`, `Region`, `Location` - Organizational hierarchy
+  - `User`, `UserScope` - Authentication and role-based access control
+  - `Coach` - Fitness professional profiles with JSONB fields
+  - `Job` - Job listings with requirements and FitScore configuration
+  - `AuditLog` - Event tracking for compliance
+  - `MatchEvent` - Match interaction tracking for ML
+- Configured Alembic for database migrations
+- Created initial migration with all tables
+- Applied migration to Neon PostgreSQL database
+- Added proper indexes for query performance
+- Implemented multi-tenant isolation via `brand_id`
+
+#### FitScore Calculation Engine
+- Implemented deterministic FitScore algorithm in `app/core/fitscore/engine.py`
+- Created 6 sub-scoring functions:
+  1. **Certifications**: Required (must have) + preferred (bonus points)
+  2. **Experience**: Minimum threshold + diminishing returns for extra years
+  3. **Availability**: Required time slots + flexibility bonus
+  4. **Location**: City match (Phase 1 - exact match only)
+  5. **Cultural fit**: Tag overlap percentage calculation
+  6. **Engagement**: Profile completeness, recency, verified video
+- Implemented 4 weighting presets in `app/core/fitscore/presets.py`:
+  - Balanced (25% certs, 20% exp, 15% avail, 15% loc, 15% culture, 10% engage)
+  - Experience-heavy (35% weight on experience)
+  - Culture-heavy (40% weight on cultural fit)
+  - Availability-focused (35% weight on availability)
+- All scores range from 0.0 to 1.0
+- Created `MatchScore` dataclass for complete score breakdown
+- Designed for easy extraction to async workers (Phase 2)
+
+#### Testing
+- Wrote comprehensive unit tests in `tests/test_fitscore.py`
+- 70+ test cases covering all scoring functions
+- Edge case testing (missing requirements, perfect matches, partial matches)
+- Preset validation tests
+- Integration tests for full FitScore calculation
+- Achieved 70%+ test coverage on FitScore engine
+
+### Changed
+- N/A
+
+### Fixed
+- Fixed Clerk SDK dependency (removed non-existent package)
+- Added `.gitkeep` to `alembic/versions` directory for git tracking
 
 ---
 

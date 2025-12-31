@@ -1,9 +1,9 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { JobPostingForm } from "@/components/forms/job-posting-form";
+import { CoachProfileForm } from "@/components/forms/coach-profile-form";
 import { auth } from "@clerk/nextjs/server";
 
-export default async function NewJobPage() {
+export default async function CoachEditPage() {
   const user = await currentUser();
   const { getToken } = await auth();
 
@@ -13,16 +13,21 @@ export default async function NewJobPage() {
 
   const token = await getToken();
 
+  // In a real implementation, we would fetch the existing coach profile
+  // const coach = await coachAPI.get(coachId, token);
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Post New Job</h1>
+        <h1 className="text-4xl font-bold mb-2">
+          Edit Coach Profile
+        </h1>
         <p className="text-muted-foreground">
-          Create a job listing to start finding qualified coaches
+          Update your professional profile and certifications
         </p>
       </div>
 
-      <JobPostingForm token={token || ""} />
+      <CoachProfileForm token={token || ""} />
     </div>
   );
 }

@@ -35,17 +35,25 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
             elif origin in settings.cors_origins_list:
                 allowed = True
 
-        # Handle preflight requests
+        # Handle preflight requests (must return 200 OK for allowed origins)
         if request.method == "OPTIONS":
             if allowed and origin:
                 return JSONResponse(
+                    status_code=200,
                     content={},
                     headers={
                         "Access-Control-Allow-Origin": origin,
-                        "Access-Control-Allow-Methods": "*",
-                        "Access-Control-Allow-Headers": "*",
+                        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+                        "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept",
                         "Access-Control-Allow-Credentials": "true",
+                        "Access-Control-Max-Age": "600",
                     },
+                )
+            else:
+                # Return 403 for disallowed origins
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "Origin not allowed"},
                 )
 
         response = await call_next(request)
@@ -54,8 +62,6 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
         if allowed and origin:
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Methods"] = "*"
-            response.headers["Access-Control-Allow-Headers"] = "*"
 
         return response
 

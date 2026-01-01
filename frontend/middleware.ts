@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 // Define public routes that don't require authentication
+// Updated for Clerk v6 compatibility with Next.js 16
 const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',

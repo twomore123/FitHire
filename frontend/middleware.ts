@@ -20,4 +20,5 @@ export const config = {
     // Always run for API routes
     "/(api|trpc)(.*)",
   ],
+  runtime: 'nodejs', // Use Node.js runtime instead of Edge
 };

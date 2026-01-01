@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +20,9 @@ export default async function CoachProfilePage() {
             Manage your professional profile and certifications
           </p>
         </div>
-        <Button>Edit Profile</Button>
+        <Link href="/dashboard/coach/edit">
+          <Button>Edit Profile</Button>
+        </Link>
       </div>
 
       <Card className="mb-6">

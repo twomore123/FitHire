@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FitHire - Fitness Professional Matching Platform",
-  description: "Connect fitness professionals with opportunities through intelligent matching",
+  description: "Connect fitness professional with opportunities through intelligent matching",
 };
 
 export default function RootLayout({

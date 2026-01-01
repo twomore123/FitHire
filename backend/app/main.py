@@ -55,6 +55,7 @@ async def root():
         "message": "Welcome to FitHire API",
         "version": "0.1.0",
         "docs": "/docs" if settings.is_development else "Documentation disabled in production",
+        "routes_loaded": True,
     }
 
 

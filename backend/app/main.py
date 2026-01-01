@@ -60,10 +60,11 @@ async def root():
 
 
 # API v1 routes
-from app.api.v1.routes import coaches, jobs
+from app.api.v1.routes.coaches import router as coaches_router
+from app.api.v1.routes.jobs import router as jobs_router
 
-app.include_router(coaches.router, prefix="/api/v1")
-app.include_router(jobs.router, prefix="/api/v1")
+app.include_router(coaches_router, prefix="/api/v1")
+app.include_router(jobs_router, prefix="/api/v1")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-// import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FitHire - Fitness Professional Matching Platform",
-  description: "Connect fitness professionals with opportunities through intelligent matching",
+  description: "Connect fitness professional with opportunities through intelligent matching",
 };
 
 export default function RootLayout({
@@ -13,12 +13,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // <ClerkProvider>
+    <ClerkProvider>
       <html lang="en">
         <body className="antialiased">
           {children}
         </body>
       </html>
-    // </ClerkProvider>
+    </ClerkProvider>
   );
 }

@@ -3,6 +3,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 from app.config import settings
 
@@ -15,14 +17,50 @@ app = FastAPI(
     redoc_url="/redoc" if settings.is_development else None,
 )
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Custom CORS middleware to handle Vercel deployment URLs
+class CustomCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin")
+
+        # Check if origin is allowed
+        allowed = False
+        if origin:
+            # Allow localhost
+            if origin.startswith("http://localhost") or origin.startswith("http://127.0.0.1"):
+                allowed = True
+            # Allow any Vercel deployment
+            elif ".vercel.app" in origin:
+                allowed = True
+            # Check against configured origins
+            elif origin in settings.cors_origins_list:
+                allowed = True
+
+        # Handle preflight requests
+        if request.method == "OPTIONS":
+            if allowed and origin:
+                return JSONResponse(
+                    content={},
+                    headers={
+                        "Access-Control-Allow-Origin": origin,
+                        "Access-Control-Allow-Methods": "*",
+                        "Access-Control-Allow-Headers": "*",
+                        "Access-Control-Allow-Credentials": "true",
+                    },
+                )
+
+        response = await call_next(request)
+
+        # Add CORS headers to response
+        if allowed and origin:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+
+        return response
+
+# Add custom CORS middleware
+app.add_middleware(CustomCORSMiddleware)
 
 
 @app.get("/health", tags=["Health"])

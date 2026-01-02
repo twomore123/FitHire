@@ -87,6 +87,7 @@ async def create_coach(
         existing_coach.verified_video_url = str(coach_data.verified_video_url) if coach_data.verified_video_url else None
         existing_coach.profile_completeness = calculate_profile_completeness(coach_data.model_dump())
         existing_coach.last_updated = datetime.now()
+        existing_coach.verified_at = datetime.now()  # Auto-verify for Phase 1 testing
 
         db.commit()
         db.refresh(existing_coach)
@@ -111,7 +112,8 @@ async def create_coach(
         profile_image_url=str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None,
         verified_video_url=str(coach_data.verified_video_url) if coach_data.verified_video_url else None,
         profile_completeness=completeness,
-        last_updated=datetime.now()
+        last_updated=datetime.now(),
+        verified_at=datetime.now()  # Auto-verify for Phase 1 testing
     )
 
     db.add(new_coach)

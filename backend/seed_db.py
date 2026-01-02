@@ -1,10 +1,11 @@
 """
 Database seeding script for FitHire
-Creates initial test data: Brand, Region, and Location
+Creates initial test data: Brand, Region, Location, and User
 """
 
 from app.db.session import SessionLocal, engine
 from app.models.brand import Brand, Region, Location
+from app.models.user import User
 from app.db.session import Base
 
 def seed_database():
@@ -54,11 +55,23 @@ def seed_database():
             )
             db.add(location)
 
+        # Create a test user (for coach profiles to reference)
+        user = User(
+            clerk_user_id="test_user_123",
+            brand_id=brand.id,
+            email="test@fithire.com",
+            first_name="Test",
+            last_name="User",
+            role="coach"
+        )
+        db.add(user)
+
         db.commit()
         print("✅ Database seeded successfully!")
         print(f"   Created Brand: {brand.name}")
         print(f"   Created Region: {region.name}")
         print(f"   Created {len(locations_data)} locations")
+        print(f"   Created Test User: {user.email}")
 
     except Exception as e:
         db.rollback()

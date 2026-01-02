@@ -37,8 +37,12 @@ async def create_job(
             detail=f"Location {job_data.location_id} not found"
         )
 
-    # Create job
+    # TODO: Get actual user_id from current_user/Clerk
+    user_id = 1
+
+    # Create job (only set fields that exist in Job model)
     new_job = Job(
+        created_by=user_id,
         brand_id=location.brand_id,
         location_id=job_data.location_id,
         title=job_data.title,
@@ -51,12 +55,11 @@ async def create_job(
         city=job_data.city,
         state=job_data.state,
         culture_tags=job_data.culture_tags,
-        compensation_type=job_data.compensation_type,
-        compensation_min=job_data.compensation_min,
-        compensation_max=job_data.compensation_max,
+        compensation_min=int(job_data.compensation_min) if job_data.compensation_min else None,
+        compensation_max=int(job_data.compensation_max) if job_data.compensation_max else None,
         weighting_preset=job_data.weighting_preset,
         fitscore_threshold=job_data.fitscore_threshold,
-        status="draft"  # New jobs start as draft
+        is_active=True  # New jobs are active by default
     )
 
     db.add(new_job)
@@ -208,12 +211,13 @@ async def get_job_candidates(
         )
 
     # Get all verified coaches in the same city (Phase 1: exact city match only)
+    # Note: Coach model doesn't have status or role_type fields
+    # verified_at is used to determine if coach is verified
     coaches = db.query(Coach).filter(
         and_(
-            Coach.status == "verified",
+            Coach.verified_at.isnot(None),  # Coach is verified if verified_at is set
             Coach.city == job.city,
-            Coach.state == job.state,
-            Coach.role_type == job.role_type  # Must match role type
+            Coach.state == job.state
         )
     ).all()
 

@@ -69,28 +69,22 @@ async def create_coach(
     # Calculate profile completeness
     completeness = calculate_profile_completeness(coach_data.model_dump())
 
-    # Create coach
+    # Create coach (only set fields that exist in Coach model)
     new_coach = Coach(
+        user_id=1,  # TODO: Get actual user_id from current_user/Clerk
         brand_id=location.brand_id,
-        location_id=coach_data.location_id,
-        first_name=coach_data.first_name,
-        last_name=coach_data.last_name,
-        email=coach_data.email,
-        phone=coach_data.phone,
         city=coach_data.city,
         state=coach_data.state,
-        role_type=coach_data.role_type,
-        certifications=[cert.model_dump() for cert in coach_data.certifications],
+        bio=coach_data.bio,
         years_experience=coach_data.years_experience,
+        certifications=[cert.model_dump() for cert in coach_data.certifications],
         available_times=coach_data.available_times,
         lifestyle_tags=coach_data.lifestyle_tags,
         movement_tags=coach_data.movement_tags,
         instruction_tags=coach_data.instruction_tags,
-        profile_photo_url=str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None,
+        profile_image_url=str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None,
         verified_video_url=str(coach_data.verified_video_url) if coach_data.verified_video_url else None,
-        bio=coach_data.bio,
         profile_completeness=completeness,
-        status="pending",  # Requires admin verification
         last_updated=datetime.now()
     )
 

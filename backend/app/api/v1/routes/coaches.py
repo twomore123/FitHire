@@ -161,13 +161,15 @@ async def list_coaches(
     """
     query = db.query(Coach)
 
-    # Apply filters
-    if location_id:
-        query = query.filter(Coach.location_id == location_id)
-    if role_type:
-        query = query.filter(Coach.role_type == role_type)
-    if status:
-        query = query.filter(Coach.status == status)
+    # Apply filters (only using fields that exist in Coach model)
+    # Note: Coach model doesn't have location_id, role_type, or status fields
+    # TODO: Add proper filtering when needed
+
+    # Filter by verified coaches only if status filter is requested
+    if status == "verified":
+        query = query.filter(Coach.verified_at.isnot(None))
+    elif status == "unverified":
+        query = query.filter(Coach.verified_at.is_(None))
 
     # Get total count
     total = query.count()
@@ -204,29 +206,38 @@ async def update_coach(
             detail=f"Coach {coach_id} not found"
         )
 
-    # Update fields if provided
+    # Update fields if provided (only fields that exist in Coach model)
     update_data = coach_update.model_dump(exclude_unset=True)
 
+    # Map frontend field names to Coach model field names
+    field_mapping = {
+        "profile_photo_url": "profile_image_url",  # Frontend uses profile_photo_url, model uses profile_image_url
+    }
+
     for field, value in update_data.items():
+        # Skip fields that don't exist in Coach model
+        if field in ["first_name", "last_name", "email", "phone", "role_type", "location_id"]:
+            continue
+
+        # Map field names
+        model_field = field_mapping.get(field, field)
+
         if field == "certifications" and value is not None:
             # Convert Pydantic models to dicts
-            setattr(coach, field, [cert.model_dump() for cert in value])
-        elif field == "profile_photo_url" or field == "verified_video_url":
+            setattr(coach, model_field, [cert.model_dump() for cert in value])
+        elif field in ["profile_photo_url", "verified_video_url"] and value is not None:
             # Convert HttpUrl to string
-            setattr(coach, field, str(value) if value else None)
+            setattr(coach, model_field, str(value) if value else None)
         else:
-            setattr(coach, field, value)
+            setattr(coach, model_field, value)
 
-    # Recalculate profile completeness
+    # Recalculate profile completeness (only using fields that exist in Coach model)
     coach_dict = {
-        "first_name": coach.first_name,
-        "last_name": coach.last_name,
-        "email": coach.email,
-        "phone": coach.phone,
         "bio": coach.bio,
         "certifications": coach.certifications,
+        "years_experience": coach.years_experience,
         "available_times": coach.available_times,
-        "profile_photo_url": coach.profile_photo_url,
+        "profile_image_url": coach.profile_image_url,
         "verified_video_url": coach.verified_video_url,
         "lifestyle_tags": coach.lifestyle_tags,
         "movement_tags": coach.movement_tags,
@@ -234,9 +245,9 @@ async def update_coach(
     }
     coach.profile_completeness = calculate_profile_completeness(coach_dict)
 
-    # Update last_updated timestamp
+    # Update last_updated timestamp and auto-verify for Phase 1
     coach.last_updated = datetime.now()
-    coach.updated_at = datetime.now()
+    coach.verified_at = datetime.now()  # Auto-verify on update for Phase 1 testing
 
     db.commit()
     db.refresh(coach)

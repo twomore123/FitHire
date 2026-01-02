@@ -66,12 +66,38 @@ async def create_coach(
             detail=f"Location {coach_data.location_id} not found"
         )
 
+    # TODO: Get actual user_id from current_user/Clerk
+    user_id = 1
+
+    # Check if coach already exists for this user
+    existing_coach = db.query(Coach).filter(Coach.user_id == user_id).first()
+    if existing_coach:
+        # Update existing coach instead of creating new one
+        existing_coach.brand_id = location.brand_id
+        existing_coach.city = coach_data.city
+        existing_coach.state = coach_data.state
+        existing_coach.bio = coach_data.bio
+        existing_coach.years_experience = coach_data.years_experience
+        existing_coach.certifications = [cert.model_dump() for cert in coach_data.certifications]
+        existing_coach.available_times = coach_data.available_times
+        existing_coach.lifestyle_tags = coach_data.lifestyle_tags
+        existing_coach.movement_tags = coach_data.movement_tags
+        existing_coach.instruction_tags = coach_data.instruction_tags
+        existing_coach.profile_image_url = str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None
+        existing_coach.verified_video_url = str(coach_data.verified_video_url) if coach_data.verified_video_url else None
+        existing_coach.profile_completeness = calculate_profile_completeness(coach_data.model_dump())
+        existing_coach.last_updated = datetime.now()
+
+        db.commit()
+        db.refresh(existing_coach)
+        return existing_coach
+
     # Calculate profile completeness
     completeness = calculate_profile_completeness(coach_data.model_dump())
 
     # Create coach (only set fields that exist in Coach model)
     new_coach = Coach(
-        user_id=1,  # TODO: Get actual user_id from current_user/Clerk
+        user_id=user_id,
         brand_id=location.brand_id,
         city=coach_data.city,
         state=coach_data.state,

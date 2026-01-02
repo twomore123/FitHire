@@ -56,9 +56,17 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
                     content={"detail": "Origin not allowed"},
                 )
 
-        response = await call_next(request)
+        # Process request and ensure CORS headers on all responses (including errors)
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            # If there's an exception, create an error response with CORS headers
+            response = JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"}
+            )
 
-        # Add CORS headers to response
+        # Add CORS headers to response (both success and error responses)
         if allowed and origin:
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Access-Control-Allow-Credentials"] = "true"

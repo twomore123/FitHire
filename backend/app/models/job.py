@@ -44,6 +44,7 @@ class Job(Base):
     weighting_preset = Column(
         String(50), nullable=False, default="balanced"
     )  # 'balanced', 'experience_heavy', 'culture_heavy', 'availability_focused'
+    custom_weights = Column(JSONB, nullable=True)  # {"certifications": 0.25, "experience": 0.20, ...}
     fitscore_threshold = Column(Numeric(3, 2), default=0.60)  # 0.00 to 1.00
 
     # Compensation (optional, not used in scoring v1)

@@ -49,7 +49,7 @@ class FitScoreEngine:
     """
 
     def calculate_match(
-        self, coach_data: Dict, job_data: Dict, preset: str = "balanced"
+        self, coach_data: Dict, job_data: Dict, preset: str = "balanced", custom_weights: Optional[Dict[str, float]] = None
     ) -> MatchScore:
         """
         Calculate complete FitScore for a coach-job pair
@@ -57,13 +57,17 @@ class FitScoreEngine:
         Args:
             coach_data: Coach profile data
             job_data: Job listing data
-            preset: Weighting preset name
+            preset: Weighting preset name (used if custom_weights is None)
+            custom_weights: Optional custom weighting configuration (overrides preset)
 
         Returns:
             MatchScore: Complete score breakdown
         """
-        # Get weighting values for this preset
-        weights = get_preset(preset)
+        # Get weighting values - use custom weights if provided, otherwise use preset
+        if custom_weights:
+            weights = custom_weights
+        else:
+            weights = get_preset(preset)
 
         # Calculate all sub-scores
         cert_score = self._score_certifications(coach_data, job_data)

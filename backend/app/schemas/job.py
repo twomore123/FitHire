@@ -1,6 +1,6 @@
 """Pydantic schemas for Job endpoints"""
 
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 from decimal import Decimal
 from pydantic import BaseModel, Field, field_validator
@@ -53,6 +53,10 @@ class JobCreate(BaseModel):
         "balanced",
         description="Weighting preset: balanced, experience_heavy, culture_heavy, availability_focused"
     )
+    custom_weights: Optional[Dict[str, float]] = Field(
+        None,
+        description="Custom weighting configuration (overrides preset if provided)"
+    )
     fitscore_threshold: Decimal = Field(
         Decimal("0.60"),
         ge=Decimal("0.40"),
@@ -104,6 +108,7 @@ class JobUpdate(BaseModel):
     compensation_max: Optional[Decimal] = None
 
     weighting_preset: Optional[str] = None
+    custom_weights: Optional[Dict[str, float]] = None
     fitscore_threshold: Optional[Decimal] = Field(None, ge=Decimal("0.40"), le=Decimal("0.80"))
 
     status: Optional[str] = None
@@ -170,6 +175,7 @@ class JobResponse(BaseModel):
     compensation_max: Optional[int] = None
 
     weighting_preset: str
+    custom_weights: Optional[Dict[str, float]] = None
     fitscore_threshold: float
 
     is_active: bool

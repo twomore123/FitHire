@@ -318,7 +318,8 @@ async def get_coach_matches(
         score = engine.calculate_match(
             coach_data,
             job_data,
-            preset=job.weighting_preset
+            preset=job.weighting_preset,
+            custom_weights=job.custom_weights
         )
 
         # Only include if above threshold

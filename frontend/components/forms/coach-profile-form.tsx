@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScheduleSelector } from "@/components/ui/schedule-selector";
 import { coachAPI } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 
@@ -199,30 +200,12 @@ export function CoachProfileForm({ initialData, coachId, token }: CoachProfileFo
       </Card>
 
       {/* Availability */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Availability</CardTitle>
-          <CardDescription>When can you work?</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            {TIME_SLOTS.map((slot) => (
-              <button
-                key={slot}
-                type="button"
-                onClick={() => toggleSelection(slot, formData.available_times, (values) => setFormData({ ...formData, available_times: values }))}
-                className={`px-3 py-1 rounded-full text-sm border ${
-                  formData.available_times.includes(slot)
-                    ? "bg-primary text-white border-primary"
-                    : "bg-white border-zinc-300"
-                }`}
-              >
-                {slot}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <ScheduleSelector
+        title="Availability"
+        description="Select the time slots when you're available to work"
+        value={formData.available_times}
+        onChange={(values) => setFormData({ ...formData, available_times: values })}
+      />
 
       {/* Cultural Fit Tags */}
       <Card>

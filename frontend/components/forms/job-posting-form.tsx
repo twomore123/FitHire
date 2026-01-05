@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScheduleSelector } from "@/components/ui/schedule-selector";
+import { WeightingSliders, type CustomWeights } from "@/components/ui/weighting-sliders";
 import { jobAPI } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 
@@ -59,6 +61,9 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [weightingMode, setWeightingMode] = useState<"preset" | "custom">(
+    initialData?.custom_weights ? "custom" : "preset"
+  );
 
   const [formData, setFormData] = useState({
     location_id: initialData?.location_id || 1, // Default to 1 for now
@@ -77,7 +82,19 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
     compensation_max: initialData?.compensation_max || "",
     weighting_preset: initialData?.weighting_preset || "balanced",
     fitscore_threshold: initialData?.fitscore_threshold || 0.60,
+    custom_weights: initialData?.custom_weights || null,
   });
+
+  const [customWeights, setCustomWeights] = useState<CustomWeights>(
+    initialData?.custom_weights || {
+      certifications: 0.25,
+      experience: 0.20,
+      availability: 0.15,
+      location: 0.15,
+      cultural_fit: 0.15,
+      engagement: 0.10,
+    }
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +106,8 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
         ...formData,
         compensation_min: formData.compensation_min ? parseFloat(formData.compensation_min) : null,
         compensation_max: formData.compensation_max ? parseFloat(formData.compensation_max) : null,
+        // Include custom_weights only if in custom mode
+        custom_weights: weightingMode === "custom" ? customWeights : null,
       };
 
       if (jobId) {
@@ -256,30 +275,12 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
       </Card>
 
       {/* Schedule */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Schedule Requirements</CardTitle>
-          <CardDescription>When do you need coverage?</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            {TIME_SLOTS.map((slot) => (
-              <button
-                key={slot}
-                type="button"
-                onClick={() => toggleSelection(slot, formData.required_availability, (values) => setFormData({ ...formData, required_availability: values }))}
-                className={`px-3 py-1 rounded-full text-sm border ${
-                  formData.required_availability.includes(slot)
-                    ? "bg-primary text-white border-primary"
-                    : "bg-white border-zinc-300"
-                }`}
-              >
-                {slot}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <ScheduleSelector
+        title="Schedule Requirements"
+        description="Select the time slots when you need coverage"
+        value={formData.required_availability}
+        onChange={(values) => setFormData({ ...formData, required_availability: values })}
+      />
 
       {/* Culture */}
       <Card>
@@ -359,25 +360,61 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
       <Card>
         <CardHeader>
           <CardTitle>Matching Configuration</CardTitle>
-          <CardDescription>How should FitScore prioritize candidates?</CardDescription>
+          <CardDescription>Configure how FitScore prioritizes candidates</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Weighting Mode Toggle */}
           <div className="space-y-2">
-            <Label htmlFor="weighting_preset">Weighting Preset</Label>
-            <select
-              id="weighting_preset"
-              className="w-full border border-zinc-200 rounded-md px-3 py-2"
-              value={formData.weighting_preset}
-              onChange={(e) => setFormData({ ...formData, weighting_preset: e.target.value })}
-            >
-              {WEIGHTING_PRESETS.map((preset) => (
-                <option key={preset.value} value={preset.value}>
-                  {preset.label} - {preset.description}
-                </option>
-              ))}
-            </select>
+            <Label>Weighting Mode</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setWeightingMode("preset")}
+                className={`flex-1 px-4 py-2 rounded-md border transition-colors ${
+                  weightingMode === "preset"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white border-zinc-300 hover:bg-zinc-50"
+                }`}
+              >
+                Use Preset
+              </button>
+              <button
+                type="button"
+                onClick={() => setWeightingMode("custom")}
+                className={`flex-1 px-4 py-2 rounded-md border transition-colors ${
+                  weightingMode === "custom"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white border-zinc-300 hover:bg-zinc-50"
+                }`}
+              >
+                Custom Weights
+              </button>
+            </div>
           </div>
 
+          {/* Preset Selector (shown when mode is "preset") */}
+          {weightingMode === "preset" && (
+            <div className="space-y-2">
+              <Label htmlFor="weighting_preset">Weighting Preset</Label>
+              <select
+                id="weighting_preset"
+                className="w-full border border-zinc-200 rounded-md px-3 py-2"
+                value={formData.weighting_preset}
+                onChange={(e) => setFormData({ ...formData, weighting_preset: e.target.value })}
+              >
+                {WEIGHTING_PRESETS.map((preset) => (
+                  <option key={preset.value} value={preset.value}>
+                    {preset.label} - {preset.description}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Choose a pre-configured weighting strategy that matches your hiring priorities
+              </p>
+            </div>
+          )}
+
+          {/* FitScore Threshold */}
           <div className="space-y-2">
             <Label htmlFor="fitscore_threshold">
               FitScore Threshold: {formData.fitscore_threshold.toFixed(2)}
@@ -398,6 +435,11 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
           </div>
         </CardContent>
       </Card>
+
+      {/* Custom Weighting Sliders (shown when mode is "custom") */}
+      {weightingMode === "custom" && (
+        <WeightingSliders value={customWeights} onChange={setCustomWeights} />
+      )}
 
       <div className="flex gap-4">
         <Button type="submit" size="lg" disabled={loading}>

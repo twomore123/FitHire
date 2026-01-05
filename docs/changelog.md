@@ -10,10 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### In Progress - Phase 1 (Day 2)
-- Frontend dashboards (Coach, Manager, Admin)
-- Clerk authentication integration on frontend
-- Deployment to Railway and Vercel
+- Schedule UI enhancements (spreadsheet-style selector)
+- Custom weighting sliders for FitScore configuration
 - End-to-end testing
+
+### Completed - Phase 1 (Day 2) ✅
+- Frontend dashboards implemented (Coach, Manager, Admin)
+- Coach profile page displays real data with verification status
+- Coach matches page shows job matches with FitScore
+- Manager job listing and editing functionality
+- Manager candidate list with matched coaches
+- Admin verification queue with approve/reject actions
+- Clerk authentication integrated on frontend
+- Deployment to Railway (backend) and Vercel (frontend)
 
 ### Completed - Phase 1 (Day 1) ✅
 - All backend API endpoints implemented
@@ -23,7 +32,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.3.0] - 2025-12-30 (In Progress)
+## [0.3.0] - 2026-01-05 (In Progress)
+
+### Added - Phase 1 Day 2 (Frontend Dashboards)
+
+#### Coach Dashboard
+- **Profile Page** (`/dashboard/coach/page.tsx`):
+  - Fetches and displays real coach data from API
+  - Shows verification status badge (verified/pending)
+  - Displays profile completeness percentage
+  - Lists certifications, availability slots, and coaching style tags
+  - Links to edit profile and view matches
+- **Matches Page** (`/dashboard/coach/matches/page.tsx`):
+  - Dynamically fetches coach ID from database
+  - Displays top 20 job matches sorted by FitScore
+  - Shows FitScore breakdown with match factors
+  - Empty state prompts profile creation if no coach profile exists
+- **Edit Profile Page**:
+  - Form pre-populated with existing coach data
+  - Updates profile correctly via PATCH endpoint
+
+#### Manager Dashboard
+- **Jobs List Page** (`/dashboard/manager/page.tsx`):
+  - Displays all jobs created by manager
+  - Shows active/inactive status using `is_active` field
+  - Links to view job details and edit jobs
+  - Summary cards showing total jobs and active jobs count
+- **Job Detail Page** (`/dashboard/manager/[jobId]/page.tsx`):
+  - Displays job requirements and details
+  - Shows list of matched candidates with FitScore
+  - Links to edit job posting
+- **Job Edit Page** (`/dashboard/manager/[jobId]/edit/page.tsx`):
+  - NEW FILE - Separate route for editing jobs (Next.js convention)
+  - Reuses JobPostingForm component with initialData
+  - Pre-populates form with existing job data
+  - Updates via API on submission
+
+#### Admin Dashboard
+- **Admin Landing Page** (`/dashboard/admin/page.tsx`):
+  - NEW FILE - Admin dashboard overview
+  - Links to verification queue
+  - Placeholder cards for Phase 2 features (reports, analytics)
+- **Verification Queue** (`/dashboard/admin/verification/page.tsx`):
+  - NEW FILE - Lists pending coach profiles
+  - Displays certifications, availability, bio, profile completeness
+  - Shows creation date for each pending profile
+  - Approve/reject actions via VerificationActions component
+- **Verification Actions Component** (`/components/admin/verification-actions.tsx`):
+  - NEW FILE - Client component for interactive buttons
+  - Approve button calls POST /admin/verify-coach/{id}
+  - Reject button calls POST /admin/reject-coach/{id}
+  - Loading states and error handling
+  - Auto-refreshes page after action
+
+#### Backend Admin Routes
+- **Admin API** (`/backend/app/api/v1/routes/admin.py`):
+  - NEW FILE - Admin-specific endpoints
+  - GET /admin/verification-queue - Returns coaches with null verified_at
+  - POST /admin/verify-coach/{id} - Sets verified_at timestamp
+  - POST /admin/reject-coach/{id} - Basic rejection (Phase 1)
+- **API Client Extension** (`/frontend/lib/api-client.ts`):
+  - Added adminAPI methods for verification endpoints
+  - getVerificationQueue(), verifyCoach(), rejectCoach()
 
 ### Added - Phase 1 Day 1 (Backend API)
 

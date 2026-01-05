@@ -1,8 +1,8 @@
 # FitHire Project Status
 
-**Last Updated:** 2025-12-30
-**Current Phase:** Phase 1 - Day 1 (Backend Foundation)
-**Target Completion:** Phase 1 by 2026-01-01
+**Last Updated:** 2026-01-05
+**Current Phase:** Phase 1 - Day 2 (Frontend Enhancement)
+**Target Completion:** Phase 1 by 2026-01-06
 
 ---
 
@@ -31,8 +31,8 @@
 ---
 
 ### Phase 1: Core Profiles & Manual Matching 🔄 (In Progress)
-**Timeline:** Dec 30, 2025 - Jan 1, 2026 (2 days)
-**Status:** 🔄 In Progress - 50% Complete (Day 1 ✅, Day 2 pending)
+**Timeline:** Dec 30, 2025 - Jan 6, 2026 (7 days)
+**Status:** 🔄 In Progress - 85% Complete (Day 1-2 ✅, Enhancement pending)
 
 **Objectives:**
 - Build functional MVP with coach profiles, job postings, and matching
@@ -57,23 +57,34 @@
 - [x] Implement matching endpoints (`/coaches/{id}/matches`, `/jobs/{id}/candidates`)
 - [x] Verify API structure (17 routes registered successfully)
 
-#### Day 2: Frontend & Deployment 🔄
-**Status:** Not Started
+#### Day 2: Frontend & Deployment ✅
+**Status:** ✅ Complete - 100%
 
 **Tasks:**
-- [ ] Initialize Next.js project with TypeScript
-- [ ] Set up Tailwind CSS + shadcn/ui
-- [ ] Integrate Clerk authentication (sign-in/sign-up)
-- [ ] Build Coach dashboard (profile form, match list)
-- [ ] Build Manager dashboard (job form, candidate list)
-- [ ] Build basic Admin panel (verification queue)
-- [ ] Implement FitScore display component with explanations
-- [ ] Add filtering UI (location, role type, availability)
-- [ ] Connect frontend to backend API
-- [ ] Deploy backend to Railway
-- [ ] Deploy frontend to Vercel
-- [ ] Configure environment variables in production
-- [ ] End-to-end smoke test (create profile → create job → see match)
+- [x] Initialize Next.js project with TypeScript
+- [x] Set up Tailwind CSS + shadcn/ui
+- [x] Integrate Clerk authentication (sign-in/sign-up)
+- [x] Build Coach dashboard (profile form, match list)
+- [x] Build Manager dashboard (job form, candidate list)
+- [x] Build basic Admin panel (verification queue)
+- [x] Implement FitScore display component with explanations
+- [x] Add filtering UI (location, role type, availability)
+- [x] Connect frontend to backend API
+- [x] Deploy backend to Railway
+- [x] Deploy frontend to Vercel
+- [x] Configure environment variables in production
+- [x] End-to-end smoke test (create profile → create job → see match)
+
+#### Day 3-4: Enhanced UX 🔄
+**Status:** In Progress
+
+**Tasks:**
+- [ ] Implement spreadsheet-style schedule selector for coaches and jobs
+- [ ] Add custom weighting sliders for FitScore configuration
+- [ ] Update backend to support custom weight values
+- [ ] Test schedule UI with various availability patterns
+- [ ] Test weighting sliders with validation (must sum to 1.0)
+- [ ] Deploy enhancements and verify in production
 
 **Success Criteria:**
 - [ ] Coach can create complete profile

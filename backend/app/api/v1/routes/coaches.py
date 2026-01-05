@@ -66,32 +66,54 @@ async def create_coach(
             detail=f"Location {coach_data.location_id} not found"
         )
 
+    # TODO: Get actual user_id from current_user/Clerk
+    user_id = 1
+
+    # Check if coach already exists for this user
+    existing_coach = db.query(Coach).filter(Coach.user_id == user_id).first()
+    if existing_coach:
+        # Update existing coach instead of creating new one
+        existing_coach.brand_id = location.brand_id
+        existing_coach.city = coach_data.city
+        existing_coach.state = coach_data.state
+        existing_coach.bio = coach_data.bio
+        existing_coach.years_experience = coach_data.years_experience
+        existing_coach.certifications = [cert.model_dump() for cert in coach_data.certifications]
+        existing_coach.available_times = coach_data.available_times
+        existing_coach.lifestyle_tags = coach_data.lifestyle_tags
+        existing_coach.movement_tags = coach_data.movement_tags
+        existing_coach.instruction_tags = coach_data.instruction_tags
+        existing_coach.profile_image_url = str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None
+        existing_coach.verified_video_url = str(coach_data.verified_video_url) if coach_data.verified_video_url else None
+        existing_coach.profile_completeness = calculate_profile_completeness(coach_data.model_dump())
+        existing_coach.last_updated = datetime.now()
+        existing_coach.verified_at = datetime.now()  # Auto-verify for Phase 1 testing
+
+        db.commit()
+        db.refresh(existing_coach)
+        return existing_coach
+
     # Calculate profile completeness
     completeness = calculate_profile_completeness(coach_data.model_dump())
 
-    # Create coach
+    # Create coach (only set fields that exist in Coach model)
     new_coach = Coach(
+        user_id=user_id,
         brand_id=location.brand_id,
-        location_id=coach_data.location_id,
-        first_name=coach_data.first_name,
-        last_name=coach_data.last_name,
-        email=coach_data.email,
-        phone=coach_data.phone,
         city=coach_data.city,
         state=coach_data.state,
-        role_type=coach_data.role_type,
-        certifications=[cert.model_dump() for cert in coach_data.certifications],
+        bio=coach_data.bio,
         years_experience=coach_data.years_experience,
+        certifications=[cert.model_dump() for cert in coach_data.certifications],
         available_times=coach_data.available_times,
         lifestyle_tags=coach_data.lifestyle_tags,
         movement_tags=coach_data.movement_tags,
         instruction_tags=coach_data.instruction_tags,
-        profile_photo_url=str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None,
+        profile_image_url=str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None,
         verified_video_url=str(coach_data.verified_video_url) if coach_data.verified_video_url else None,
-        bio=coach_data.bio,
         profile_completeness=completeness,
-        status="pending",  # Requires admin verification
-        last_updated=datetime.now()
+        last_updated=datetime.now(),
+        verified_at=datetime.now()  # Auto-verify for Phase 1 testing
     )
 
     db.add(new_coach)
@@ -139,13 +161,15 @@ async def list_coaches(
     """
     query = db.query(Coach)
 
-    # Apply filters
-    if location_id:
-        query = query.filter(Coach.location_id == location_id)
-    if role_type:
-        query = query.filter(Coach.role_type == role_type)
-    if status:
-        query = query.filter(Coach.status == status)
+    # Apply filters (only using fields that exist in Coach model)
+    # Note: Coach model doesn't have location_id, role_type, or status fields
+    # TODO: Add proper filtering when needed
+
+    # Filter by verified coaches only if status filter is requested
+    if status == "verified":
+        query = query.filter(Coach.verified_at.isnot(None))
+    elif status == "unverified":
+        query = query.filter(Coach.verified_at.is_(None))
 
     # Get total count
     total = query.count()
@@ -182,29 +206,38 @@ async def update_coach(
             detail=f"Coach {coach_id} not found"
         )
 
-    # Update fields if provided
+    # Update fields if provided (only fields that exist in Coach model)
     update_data = coach_update.model_dump(exclude_unset=True)
 
+    # Map frontend field names to Coach model field names
+    field_mapping = {
+        "profile_photo_url": "profile_image_url",  # Frontend uses profile_photo_url, model uses profile_image_url
+    }
+
     for field, value in update_data.items():
+        # Skip fields that don't exist in Coach model
+        if field in ["first_name", "last_name", "email", "phone", "role_type", "location_id"]:
+            continue
+
+        # Map field names
+        model_field = field_mapping.get(field, field)
+
         if field == "certifications" and value is not None:
             # Convert Pydantic models to dicts
-            setattr(coach, field, [cert.model_dump() for cert in value])
-        elif field == "profile_photo_url" or field == "verified_video_url":
+            setattr(coach, model_field, [cert.model_dump() for cert in value])
+        elif field in ["profile_photo_url", "verified_video_url"] and value is not None:
             # Convert HttpUrl to string
-            setattr(coach, field, str(value) if value else None)
+            setattr(coach, model_field, str(value) if value else None)
         else:
-            setattr(coach, field, value)
+            setattr(coach, model_field, value)
 
-    # Recalculate profile completeness
+    # Recalculate profile completeness (only using fields that exist in Coach model)
     coach_dict = {
-        "first_name": coach.first_name,
-        "last_name": coach.last_name,
-        "email": coach.email,
-        "phone": coach.phone,
         "bio": coach.bio,
         "certifications": coach.certifications,
+        "years_experience": coach.years_experience,
         "available_times": coach.available_times,
-        "profile_photo_url": coach.profile_photo_url,
+        "profile_image_url": coach.profile_image_url,
         "verified_video_url": coach.verified_video_url,
         "lifestyle_tags": coach.lifestyle_tags,
         "movement_tags": coach.movement_tags,
@@ -212,9 +245,9 @@ async def update_coach(
     }
     coach.profile_completeness = calculate_profile_completeness(coach_dict)
 
-    # Update last_updated timestamp
+    # Update last_updated timestamp and auto-verify for Phase 1
     coach.last_updated = datetime.now()
-    coach.updated_at = datetime.now()
+    coach.verified_at = datetime.now()  # Auto-verify on update for Phase 1 testing
 
     db.commit()
     db.refresh(coach)

@@ -62,14 +62,9 @@ export function CoachProfileForm({ initialData, coachId, token }: CoachProfileFo
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    location_id: initialData?.location_id || 1, // Default to 1 for now
-    first_name: initialData?.first_name || "",
-    last_name: initialData?.last_name || "",
-    email: initialData?.email || "",
-    phone: initialData?.phone || "",
+    location_id: 1, // Hardcoded for Phase 1
     city: initialData?.city || "",
     state: initialData?.state || "",
-    role_type: initialData?.role_type || "",
     years_experience: initialData?.years_experience || 0,
     certifications: initialData?.certifications || [],
     available_times: initialData?.available_times || [],
@@ -133,53 +128,10 @@ export function CoachProfileForm({ initialData, coachId, token }: CoachProfileFo
       {/* Basic Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-          <CardDescription>Tell us about yourself</CardDescription>
+          <CardTitle>Location</CardTitle>
+          <CardDescription>Where are you based?</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">First Name *</Label>
-              <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name *</Label>
-              <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-          </div>
-
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city">City *</Label>
@@ -212,24 +164,6 @@ export function CoachProfileForm({ initialData, coachId, token }: CoachProfileFo
           <CardDescription>Your fitness expertise</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="role_type">Role Type *</Label>
-            <select
-              id="role_type"
-              className="w-full border border-zinc-200 rounded-md px-3 py-2"
-              value={formData.role_type}
-              onChange={(e) => setFormData({ ...formData, role_type: e.target.value })}
-              required
-            >
-              <option value="">Select a role</option>
-              {ROLE_TYPES.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="years_experience">Years of Experience *</Label>
             <Input

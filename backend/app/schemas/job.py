@@ -147,15 +147,16 @@ class JobUpdate(BaseModel):
 class JobResponse(BaseModel):
     """Schema for job listing responses"""
     id: int
+    created_by: int
     location_id: int
     brand_id: int
 
     title: str
-    description: str
+    description: Optional[str] = None
 
     role_type: str
     required_certifications: List[str]
-    preferred_certifications: List[str]
+    preferred_certifications: Optional[List[str]] = None
     min_experience: int
 
     required_availability: List[str]
@@ -163,16 +164,15 @@ class JobResponse(BaseModel):
     city: str
     state: str
 
-    culture_tags: List[str]
+    culture_tags: Optional[List[str]] = None
 
-    compensation_type: Optional[str]
-    compensation_min: Optional[float]
-    compensation_max: Optional[float]
+    compensation_min: Optional[int] = None
+    compensation_max: Optional[int] = None
 
     weighting_preset: str
     fitscore_threshold: float
 
-    status: str
+    is_active: bool
 
     created_at: datetime
     updated_at: datetime

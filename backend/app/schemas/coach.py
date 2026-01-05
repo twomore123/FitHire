@@ -118,37 +118,37 @@ class CoachUpdate(BaseModel):
 class CoachResponse(BaseModel):
     """Schema for coach profile responses"""
     id: int
-    location_id: int
+    user_id: int
     brand_id: int
 
-    first_name: str
-    last_name: str
-    email: str
-    phone: Optional[str]
+    # Basic Info
     city: str
     state: str
+    bio: Optional[str] = None
 
-    role_type: str
-    certifications: List[dict]
+    # Experience
     years_experience: int
+    certifications: List[dict]
+    specialties: Optional[List[str]] = None
 
+    # Availability
     available_times: List[str]
 
-    lifestyle_tags: List[str]
-    movement_tags: List[str]
-    instruction_tags: List[str]
+    # Cultural fit tags
+    lifestyle_tags: Optional[List[str]] = None
+    movement_tags: Optional[List[str]] = None
+    instruction_tags: Optional[List[str]] = None
 
-    profile_photo_url: Optional[str]
-    verified_video_url: Optional[str]
+    # Media
+    profile_image_url: Optional[str] = None
+    verified_video_url: Optional[str] = None
+    social_links: Optional[dict] = None
 
-    bio: Optional[str]
-
-    profile_completeness: Optional[float]
-    status: str
-
-    created_at: datetime
-    updated_at: datetime
+    # Metadata
+    profile_completeness: Optional[float] = None
+    verified_at: Optional[datetime] = None
     last_updated: datetime
+    created_at: datetime
 
     class Config:
         from_attributes = True

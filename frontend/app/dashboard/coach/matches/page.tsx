@@ -24,9 +24,10 @@ export default async function CoachMatchesPage() {
     if (token) {
       const coachList = await coachAPI.list({ page: 1, page_size: 1 }, token);
       if (coachList.coaches && coachList.coaches.length > 0) {
-        coachId = coachList.coaches[0].id;
+        const fetchedCoachId = coachList.coaches[0].id;
+        coachId = fetchedCoachId;
         // Fetch matches for this coach
-        const matchesData = await coachAPI.getMatches(coachId, 20, token);
+        const matchesData = await coachAPI.getMatches(fetchedCoachId, 20, token);
         matches = matchesData.matches || [];
       }
     }

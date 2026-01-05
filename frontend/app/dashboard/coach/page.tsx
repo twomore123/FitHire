@@ -1,15 +1,58 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { coachAPI } from "@/lib/api-client";
 
 export default async function CoachProfilePage() {
   const user = await currentUser();
+  const { getToken } = await auth();
 
   if (!user) {
     redirect("/sign-in");
   }
+
+  const token = await getToken();
+  let existingCoach: any = null;
+
+  // Fetch the existing coach profile
+  try {
+    if (token) {
+      const coachList = await coachAPI.list({ page: 1, page_size: 1 }, token);
+      if (coachList.coaches && coachList.coaches.length > 0) {
+        existingCoach = coachList.coaches[0];
+      }
+    }
+  } catch (error) {
+    console.error("Failed to fetch coach profile:", error);
+  }
+
+  // If no coach profile exists, show create prompt
+  if (!existingCoach) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">👤</div>
+              <h3 className="text-xl font-semibold mb-2">No Profile Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your coach profile to start matching with jobs
+              </p>
+              <Link href="/dashboard/coach/edit">
+                <Button size="lg">Create Profile</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const completeness = Math.round((existingCoach.profile_completeness || 0) * 100);
+  const isVerified = !!existingCoach.verified_at;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -29,14 +72,15 @@ export default async function CoachProfilePage() {
         <CardHeader>
           <CardTitle>Profile Status</CardTitle>
           <CardDescription>
-            Your profile is pending verification
+            {isVerified ? "Your profile is verified" : "Your profile is pending verification"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-            <p className="text-sm text-yellow-800">
-              Your profile is currently under review. Once verified by an administrator,
-              you'll be able to see job matches and apply to opportunities.
+          <div className={`p-4 border rounded-md ${isVerified ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+            <p className={`text-sm ${isVerified ? 'text-green-800' : 'text-yellow-800'}`}>
+              {isVerified
+                ? "Your profile has been verified by an administrator. You can now see job matches and apply to opportunities."
+                : "Your profile is currently under review. Once verified by an administrator, you'll be able to see job matches and apply to opportunities."}
             </p>
           </div>
         </CardContent>
@@ -57,8 +101,12 @@ export default async function CoachProfilePage() {
               <div className="font-medium">{user.emailAddresses[0]?.emailAddress}</div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Role Type</div>
-              <div className="font-medium text-muted-foreground">Not set</div>
+              <div className="text-sm text-muted-foreground">Location</div>
+              <div className="font-medium">{existingCoach.city}, {existingCoach.state}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Years of Experience</div>
+              <div className="font-medium">{existingCoach.years_experience} years</div>
             </div>
           </CardContent>
         </Card>
@@ -68,9 +116,22 @@ export default async function CoachProfilePage() {
             <CardTitle>Certifications</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              No certifications added yet. Click "Edit Profile" to add your certifications.
-            </p>
+            {existingCoach.certifications && existingCoach.certifications.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {existingCoach.certifications.map((cert: any, index: number) => (
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium"
+                  >
+                    {cert.name}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No certifications added yet. Click "Edit Profile" to add your certifications.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -79,9 +140,22 @@ export default async function CoachProfilePage() {
             <CardTitle>Availability</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              No availability set. Click "Edit Profile" to set your available times.
-            </p>
+            {existingCoach.available_times && existingCoach.available_times.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {existingCoach.available_times.map((slot: string) => (
+                  <span
+                    key={slot}
+                    className="px-2 py-1 bg-zinc-100 rounded-md text-xs font-medium"
+                  >
+                    {slot}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No availability set. Click "Edit Profile" to set your available times.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -93,10 +167,10 @@ export default async function CoachProfilePage() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Progress</span>
-                <span className="font-medium">20%</span>
+                <span className="font-medium">{completeness}%</span>
               </div>
               <div className="w-full bg-zinc-200 rounded-full h-2">
-                <div className="bg-primary h-2 rounded-full" style={{ width: "20%" }}></div>
+                <div className="bg-primary h-2 rounded-full" style={{ width: `${completeness}%` }}></div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 Complete your profile to increase your match visibility
@@ -106,34 +180,64 @@ export default async function CoachProfilePage() {
         </Card>
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Next Steps</CardTitle>
-          <CardDescription>
-            Complete these steps to get the most out of FitHire
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2">
-            <li className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-              <span>Add your certifications</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-              <span>Set your availability</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-              <span>Upload a profile photo</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-              <span>Add a verification video</span>
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
+      {existingCoach.bio && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Bio</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {existingCoach.bio}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {(existingCoach.lifestyle_tags?.length > 0 || existingCoach.movement_tags?.length > 0 || existingCoach.instruction_tags?.length > 0) && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Coaching Style</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {existingCoach.lifestyle_tags && existingCoach.lifestyle_tags.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">Lifestyle Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                  {existingCoach.lifestyle_tags.map((tag: string) => (
+                    <span key={tag} className="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs font-medium">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {existingCoach.movement_tags && existingCoach.movement_tags.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">Movement Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                  {existingCoach.movement_tags.map((tag: string) => (
+                    <span key={tag} className="px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-medium">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {existingCoach.instruction_tags && existingCoach.instruction_tags.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">Instruction Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                  {existingCoach.instruction_tags.map((tag: string) => (
+                    <span key={tag} className="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

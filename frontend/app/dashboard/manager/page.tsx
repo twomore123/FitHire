@@ -29,7 +29,7 @@ export default async function ManagerJobsPage() {
     console.log("Error fetching jobs:", error);
   }
 
-  const activeJobs = jobs.filter(job => job.status === 'open').length;
+  const activeJobs = jobs.filter(job => job.is_active).length;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -74,11 +74,9 @@ export default async function ManagerJobsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      job.status === 'open' ? 'bg-green-100 text-green-700' :
-                      job.status === 'filled' ? 'bg-blue-100 text-blue-700' :
-                      'bg-zinc-100 text-zinc-700'
+                      job.is_active ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-700'
                     }`}>
-                      {job.status}
+                      {job.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </div>
@@ -91,7 +89,9 @@ export default async function ManagerJobsPage() {
                   <Link href={`/dashboard/manager/${job.id}`}>
                     <Button size="sm">View Candidates</Button>
                   </Link>
-                  <Button size="sm" variant="outline">Edit</Button>
+                  <Link href={`/dashboard/manager/${job.id}/edit`}>
+                    <Button size="sm" variant="outline">Edit</Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

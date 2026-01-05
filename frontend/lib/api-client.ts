@@ -142,3 +142,25 @@ export const jobAPI = {
     return response.json();
   },
 };
+
+// Admin API
+export const adminAPI = {
+  async getVerificationQueue(token: string) {
+    const response = await fetchWithAuth("/api/v1/admin/verification-queue", {}, token);
+    return response.json();
+  },
+
+  async verifyCoach(id: number, token: string) {
+    const response = await fetchWithAuth(`/api/v1/admin/verify-coach/${id}`, {
+      method: "POST",
+    }, token);
+    return response.json();
+  },
+
+  async rejectCoach(id: number, token: string) {
+    const response = await fetchWithAuth(`/api/v1/admin/reject-coach/${id}`, {
+      method: "POST",
+    }, token);
+    return response.json();
+  },
+};

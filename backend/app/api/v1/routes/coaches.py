@@ -10,12 +10,54 @@ from app.db.session import get_db
 from app.models.coach import Coach
 from app.models.job import Job
 from app.models.brand import Location
+from app.models.user import User
 from app.schemas.coach import CoachCreate, CoachUpdate, CoachResponse, CoachListResponse
 from app.schemas.match import CoachMatchesResponse, CoachMatchResult, FitScoreBreakdown
 from app.utils.auth import get_current_user
 from app.core.fitscore.engine import FitScoreEngine
 
 router = APIRouter(prefix="/coaches", tags=["coaches"])
+
+
+def get_or_create_user(db: Session, current_user: dict) -> User:
+    """
+    Get or create a User record from Clerk authentication
+
+    Args:
+        db: Database session
+        current_user: Decoded JWT payload from Clerk
+
+    Returns:
+        User: The user record
+    """
+    clerk_user_id = current_user.get("sub")
+    if not clerk_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token: missing user ID"
+        )
+
+    # Try to find existing user
+    user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
+
+    if not user:
+        # Create new user record
+        # Extract email from JWT (Clerk includes this in the token)
+        email = current_user.get("email") or current_user.get("primary_email_address_id") or f"{clerk_user_id}@unknown.com"
+
+        user = User(
+            clerk_user_id=clerk_user_id,
+            email=email,
+            first_name=current_user.get("first_name"),
+            last_name=current_user.get("last_name"),
+            role="coach",  # Default role for new users
+            brand_id=1  # Default brand for Phase 1
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    return user
 
 
 def calculate_profile_completeness(coach_data: dict) -> float:
@@ -66,11 +108,11 @@ async def create_coach(
             detail=f"Location {coach_data.location_id} not found"
         )
 
-    # TODO: Get actual user_id from current_user/Clerk
-    user_id = 1
+    # Get or create user from Clerk authentication
+    user = get_or_create_user(db, current_user)
 
     # Check if coach already exists for this user
-    existing_coach = db.query(Coach).filter(Coach.user_id == user_id).first()
+    existing_coach = db.query(Coach).filter(Coach.user_id == user.id).first()
     if existing_coach:
         # Update existing coach instead of creating new one
         existing_coach.brand_id = location.brand_id
@@ -98,7 +140,7 @@ async def create_coach(
 
     # Create coach (only set fields that exist in Coach model)
     new_coach = Coach(
-        user_id=user_id,
+        user_id=user.id,
         brand_id=location.brand_id,
         city=coach_data.city,
         state=coach_data.state,
@@ -132,13 +174,24 @@ async def get_coach(
     """
     Get a single coach profile by ID
 
-    Requires authentication.
+    Requires authentication. Users can only view their own coach profiles.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Coach {coach_id} not found"
+        )
+
+    # Verify that this coach belongs to the current user
+    # (Managers and admins viewing candidates will use the matches endpoint)
+    if coach.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this coach profile"
         )
 
     return coach
@@ -157,14 +210,15 @@ async def list_coaches(
     """
     List coaches with pagination and filtering
 
-    Requires authentication. Users see coaches in their authorized locations.
+    Requires authentication. Users see only their own coach profiles.
     """
-    query = db.query(Coach)
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
 
-    # Apply filters (only using fields that exist in Coach model)
-    # Note: Coach model doesn't have location_id, role_type, or status fields
-    # TODO: Add proper filtering when needed
+    # Start with query filtered by current user
+    query = db.query(Coach).filter(Coach.user_id == user.id)
 
+    # Apply additional filters
     # Filter by verified coaches only if status filter is requested
     if status == "verified":
         query = query.filter(Coach.verified_at.isnot(None))
@@ -197,13 +251,24 @@ async def update_coach(
     """
     Update a coach profile
 
-    Requires authentication. Only updates provided fields (partial update).
+    Requires authentication. Users can only update their own coach profiles.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
+    # Fetch the coach and verify ownership
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Coach {coach_id} not found"
+        )
+
+    # Verify that this coach belongs to the current user
+    if coach.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to update this coach profile"
         )
 
     # Update fields if provided (only fields that exist in Coach model)
@@ -274,12 +339,22 @@ async def get_coach_matches(
     Returns jobs ranked by FitScore, filtered by the job's threshold.
     Only returns jobs with status='open'.
     """
-    # Get coach
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
+    # Get coach and verify ownership
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Coach {coach_id} not found"
+        )
+
+    # Verify that this coach belongs to the current user
+    if coach.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view matches for this coach profile"
         )
 
     # Get all open jobs in the same city (Phase 1: exact city match only)

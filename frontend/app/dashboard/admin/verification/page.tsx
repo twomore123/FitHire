@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { adminAPI } from "@/lib/api-client";
 import { VerificationActions } from "@/components/admin/verification-actions";
 
+// Disable caching for this page - each user should see their own data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function VerificationQueuePage() {
   const user = await currentUser();
   const { getToken } = await auth();

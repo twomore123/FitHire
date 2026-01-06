@@ -223,8 +223,14 @@ async def update_coach(
         model_field = field_mapping.get(field, field)
 
         if field == "certifications" and value is not None:
-            # Convert Pydantic models to dicts
-            setattr(coach, model_field, [cert.model_dump() for cert in value])
+            # Handle both Pydantic models and plain dicts from frontend
+            certs = []
+            for cert in value:
+                if isinstance(cert, dict):
+                    certs.append(cert)  # Already a dict
+                else:
+                    certs.append(cert.model_dump())  # Pydantic model
+            setattr(coach, model_field, certs)
         elif field in ["profile_photo_url", "verified_video_url"] and value is not None:
             # Convert HttpUrl to string
             setattr(coach, model_field, str(value) if value else None)

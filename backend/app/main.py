@@ -1,5 +1,7 @@
 """FitHire FastAPI Application Entry Point"""
 
+import logging
+import traceback
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -7,6 +9,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from app.config import settings
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create FastAPI application
 app = FastAPI(
@@ -60,10 +66,15 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
         except Exception as e:
+            # Log the full error traceback
+            logger.error(f"Unhandled exception in request: {request.method} {request.url}")
+            logger.error(f"Error: {str(e)}")
+            logger.error(traceback.format_exc())
+
             # If there's an exception, create an error response with CORS headers
             response = JSONResponse(
                 status_code=500,
-                content={"detail": "Internal server error"}
+                content={"detail": "Internal server error", "error": str(e)}
             )
 
         # Add CORS headers to response (both success and error responses)

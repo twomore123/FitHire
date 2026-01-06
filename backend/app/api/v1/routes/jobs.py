@@ -10,12 +10,54 @@ from app.db.session import get_db
 from app.models.job import Job
 from app.models.coach import Coach
 from app.models.brand import Location
+from app.models.user import User
 from app.schemas.job import JobCreate, JobUpdate, JobResponse, JobListResponse
 from app.schemas.match import JobCandidatesResponse, JobCandidateResult, FitScoreBreakdown
 from app.utils.auth import get_current_user
 from app.core.fitscore.engine import FitScoreEngine
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+
+def get_or_create_user(db: Session, current_user: dict) -> User:
+    """
+    Get or create a User record from Clerk authentication
+
+    Args:
+        db: Database session
+        current_user: Decoded JWT payload from Clerk
+
+    Returns:
+        User: The user record
+    """
+    clerk_user_id = current_user.get("sub")
+    if not clerk_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token: missing user ID"
+        )
+
+    # Try to find existing user
+    user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
+
+    if not user:
+        # Create new user record
+        # Extract email from JWT (Clerk includes this in the token)
+        email = current_user.get("email") or current_user.get("primary_email_address_id") or f"{clerk_user_id}@unknown.com"
+
+        user = User(
+            clerk_user_id=clerk_user_id,
+            email=email,
+            first_name=current_user.get("first_name"),
+            last_name=current_user.get("last_name"),
+            role="location_manager",  # Default role for job creators
+            brand_id=1  # Default brand for Phase 1
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    return user
 
 
 @router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
@@ -37,12 +79,12 @@ async def create_job(
             detail=f"Location {job_data.location_id} not found"
         )
 
-    # TODO: Get actual user_id from current_user/Clerk
-    user_id = 1
+    # Get or create user from Clerk authentication
+    user = get_or_create_user(db, current_user)
 
     # Create job (only set fields that exist in Job model)
     new_job = Job(
-        created_by=user_id,
+        created_by=user.id,
         brand_id=location.brand_id,
         location_id=job_data.location_id,
         title=job_data.title,
@@ -78,13 +120,23 @@ async def get_job(
     """
     Get a single job listing by ID
 
-    Requires authentication.
+    Requires authentication. Users can only view their own jobs.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job {job_id} not found"
+        )
+
+    # Verify that this job belongs to the current user
+    if job.created_by != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this job listing"
         )
 
     return job
@@ -103,11 +155,15 @@ async def list_jobs(
     """
     List jobs with pagination and filtering
 
-    Requires authentication. Users see jobs in their authorized locations.
+    Requires authentication. Users see only their own job listings.
     """
-    query = db.query(Job)
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
 
-    # Apply filters
+    # Start with query filtered by current user
+    query = db.query(Job).filter(Job.created_by == user.id)
+
+    # Apply additional filters
     if location_id:
         query = query.filter(Job.location_id == location_id)
     if role_type:
@@ -141,13 +197,23 @@ async def update_job(
     """
     Update a job listing
 
-    Requires authentication. Only updates provided fields (partial update).
+    Requires authentication. Users can only update their own jobs.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job {job_id} not found"
+        )
+
+    # Verify that this job belongs to the current user
+    if job.created_by != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to update this job listing"
         )
 
     # Update fields if provided
@@ -174,13 +240,23 @@ async def delete_job(
     """
     Delete a job listing
 
-    Requires authentication and appropriate permissions.
+    Requires authentication. Users can only delete their own jobs.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job {job_id} not found"
+        )
+
+    # Verify that this job belongs to the current user
+    if job.created_by != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this job listing"
         )
 
     db.delete(job)
@@ -202,12 +278,22 @@ async def get_job_candidates(
     Returns coaches ranked by FitScore, filtered by the job's threshold.
     Only returns coaches with status='verified'.
     """
-    # Get job
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
+    # Get job and verify ownership
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job {job_id} not found"
+        )
+
+    # Verify that this job belongs to the current user
+    if job.created_by != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view candidates for this job listing"
         )
 
     # Get all verified coaches in the same city (Phase 1: exact city match only)

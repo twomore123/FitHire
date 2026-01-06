@@ -82,24 +82,16 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
 
 def calculate_profile_completeness(coach_data: dict) -> float:
     """Calculate profile completeness percentage"""
-    total_fields = 10
+    total_fields = 6
     completed = 0
 
-    if coach_data.get("first_name"):
-        completed += 1
-    if coach_data.get("last_name"):
-        completed += 1
-    if coach_data.get("email"):
-        completed += 1
-    if coach_data.get("phone"):
-        completed += 1
     if coach_data.get("bio"):
         completed += 1
     if coach_data.get("certifications") and len(coach_data["certifications"]) > 0:
         completed += 1
     if coach_data.get("available_times") and len(coach_data["available_times"]) > 0:
         completed += 1
-    if coach_data.get("profile_photo_url"):
+    if coach_data.get("profile_photo_url") or coach_data.get("profile_image_url"):
         completed += 1
     if coach_data.get("verified_video_url"):
         completed += 1
@@ -300,10 +292,6 @@ async def update_coach(
     }
 
     for field, value in update_data.items():
-        # Skip fields that don't exist in Coach model
-        if field in ["first_name", "last_name", "email", "phone", "role_type", "location_id"]:
-            continue
-
         # Map field names
         model_field = field_mapping.get(field, field)
 

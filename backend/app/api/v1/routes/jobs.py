@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import datetime
+import logging
 
 from app.db.session import get_db
 from app.models.job import Job
@@ -17,6 +18,7 @@ from app.utils.auth import get_current_user
 from app.core.fitscore.engine import FitScoreEngine
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+logger = logging.getLogger(__name__)
 
 
 def get_or_create_user(db: Session, current_user: dict) -> User:
@@ -30,34 +32,52 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
     Returns:
         User: The user record
     """
-    clerk_user_id = current_user.get("sub")
-    if not clerk_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token: missing user ID"
-        )
+    try:
+        clerk_user_id = current_user.get("sub")
+        logger.info(f"JWT payload keys: {list(current_user.keys())}")
+        logger.info(f"Clerk user ID: {clerk_user_id}")
 
-    # Try to find existing user
-    user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
+        if not clerk_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication token: missing user ID"
+            )
 
-    if not user:
-        # Create new user record
-        # Extract email from JWT (Clerk includes this in the token)
-        email = current_user.get("email") or current_user.get("primary_email_address_id") or f"{clerk_user_id}@unknown.com"
+        # Try to find existing user
+        user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
 
-        user = User(
-            clerk_user_id=clerk_user_id,
-            email=email,
-            first_name=current_user.get("first_name"),
-            last_name=current_user.get("last_name"),
-            role="location_manager",  # Default role for job creators
-            brand_id=1  # Default brand for Phase 1
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        if not user:
+            # Create new user record
+            # Extract email from JWT - Clerk uses different field names
+            email = (
+                current_user.get("email") or
+                current_user.get("email_address") or
+                current_user.get("primary_email") or
+                f"{clerk_user_id}@clerk.user"
+            )
 
-    return user
+            logger.info(f"Creating new user with email: {email}")
+
+            user = User(
+                clerk_user_id=clerk_user_id,
+                email=email,
+                first_name=current_user.get("given_name") or current_user.get("first_name"),
+                last_name=current_user.get("family_name") or current_user.get("last_name"),
+                role="location_manager",  # Default role for job creators
+                brand_id=1  # Default brand for Phase 1
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            logger.info(f"Created user with ID: {user.id}")
+        else:
+            logger.info(f"Found existing user with ID: {user.id}")
+
+        return user
+    except Exception as e:
+        logger.error(f"Error in get_or_create_user: {str(e)}")
+        logger.error(f"JWT payload: {current_user}")
+        raise
 
 
 @router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED)

@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { JobMatchList } from "@/components/matches/job-match-list";
 import { coachAPI } from "@/lib/api-client";
 
+// Disable caching for this page - each user should see their own data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function CoachMatchesPage() {
   const user = await currentUser();
   const { getToken } = await auth();

@@ -4,6 +4,10 @@ import { JobPostingForm } from "@/components/forms/job-posting-form";
 import { auth } from "@clerk/nextjs/server";
 import { jobAPI } from "@/lib/api-client";
 
+// Disable caching for this page - each user should see their own data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function JobEditPage({ params }: { params: { jobId: string } }) {
   const user = await currentUser();
   const { getToken } = await auth();

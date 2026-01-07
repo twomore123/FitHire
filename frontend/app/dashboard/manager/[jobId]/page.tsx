@@ -11,7 +11,7 @@ import { jobAPI } from "@/lib/api-client";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function JobDetailPage({ params }: { params: { jobId: string } }) {
+export default async function JobDetailPage({ params }: { params: Promise<{ jobId: string }> | { jobId: string } }) {
   const user = await currentUser();
   const { getToken } = await auth();
 
@@ -19,8 +19,13 @@ export default async function JobDetailPage({ params }: { params: { jobId: strin
     redirect("/sign-in");
   }
 
+  // Await params if it's a Promise (Next.js 15+)
+  const resolvedParams = params instanceof Promise ? await params : params;
   const token = await getToken();
-  const jobId = parseInt(params.jobId);
+  const jobId = parseInt(resolvedParams.jobId);
+
+  console.log(`JobDetailPage: params.jobId=${resolvedParams.jobId}, parsed jobId=${jobId}, isNaN=${isNaN(jobId)}`);
+
   let job: any = null;
   let candidates: any[] = [];
 
@@ -28,7 +33,7 @@ export default async function JobDetailPage({ params }: { params: { jobId: strin
     if (token) {
       // Validate jobId is a valid number
       if (isNaN(jobId)) {
-        console.error(`Invalid job ID: ${params.jobId} (parsed as ${jobId})`);
+        console.error(`Invalid job ID: ${resolvedParams.jobId} (parsed as ${jobId})`);
         throw new Error("Invalid job ID");
       }
 

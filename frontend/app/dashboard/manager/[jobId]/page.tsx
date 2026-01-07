@@ -46,7 +46,32 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
       // Fetch candidates for this job
       console.log(`Fetching candidates for job ${jobId}...`);
       const candidatesData = await jobAPI.getCandidates(jobId, 20, token);
-      candidates = candidatesData.candidates || [];
+
+      // Transform candidates to match CandidateList interface
+      candidates = (candidatesData.candidates || []).map((c: any) => ({
+        coach_id: c.coach.id,
+        first_name: "Coach", // TODO: Get from user table
+        last_name: `#${c.coach.id}`,
+        email: `coach${c.coach.id}@example.com`, // TODO: Get from user table
+        city: c.coach.city,
+        state: c.coach.state,
+        role_type: "Fitness Coach",
+        years_experience: c.coach.years_experience || 0,
+        certifications: Array.isArray(c.coach.certifications)
+          ? c.coach.certifications.map((cert: any) =>
+              typeof cert === 'string' ? cert : (cert.name || 'Unknown')
+            )
+          : [],
+        fitscore: c.fitscore,
+        fitscore_breakdown: {
+          certification_score: c.score_breakdown?.cert_score || 0,
+          experience_score: c.score_breakdown?.experience_score || 0,
+          availability_score: c.score_breakdown?.availability_score || 0,
+          location_score: c.score_breakdown?.location_score || 0,
+          culture_score: c.score_breakdown?.culture_score || 0,
+          engagement_score: c.score_breakdown?.engagement_score || 0,
+        },
+      }));
       console.log(`Found ${candidates.length} candidates`);
     }
   } catch (error: any) {

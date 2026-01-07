@@ -91,6 +91,8 @@ async def create_job(
 
     Requires authentication. Users can only create jobs in their authorized locations.
     """
+    logger.info(f"Creating job: {job_data.title}")
+
     # Verify location exists and user has access
     location = db.query(Location).filter(Location.id == job_data.location_id).first()
     if not location:
@@ -101,6 +103,8 @@ async def create_job(
 
     # Get or create user from Clerk authentication
     user = get_or_create_user(db, current_user)
+
+    logger.info(f"Job being created by user ID: {user.id}")
 
     # Create job (only set fields that exist in Job model)
     new_job = Job(
@@ -120,6 +124,7 @@ async def create_job(
         compensation_min=int(job_data.compensation_min) if job_data.compensation_min else None,
         compensation_max=int(job_data.compensation_max) if job_data.compensation_max else None,
         weighting_preset=job_data.weighting_preset,
+        custom_weights=job_data.custom_weights,  # Add custom_weights field
         fitscore_threshold=job_data.fitscore_threshold,
         is_active=True  # New jobs are active by default
     )

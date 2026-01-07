@@ -375,7 +375,7 @@ async def get_coach_matches(
     # Get all open jobs in the same city (Phase 1: exact city match only)
     jobs = db.query(Job).filter(
         and_(
-            Job.status == "open",
+            Job.is_active == True,
             Job.city == coach.city,
             Job.state == coach.state
         )

@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 from datetime import datetime
 import logging
@@ -332,7 +332,7 @@ async def get_job_candidates(
     # verified_at is used to determine if coach is verified
     logger.info(f"Looking for coaches in {job.city}, {job.state}")
 
-    coaches = db.query(Coach).filter(
+    coaches = db.query(Coach).options(joinedload(Coach.user)).filter(
         and_(
             Coach.verified_at.isnot(None),  # Coach is verified if verified_at is set
             Coach.city == job.city,

@@ -5,6 +5,17 @@ from datetime import datetime
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 
+class UserInfo(BaseModel):
+    """Basic user information for coach profiles"""
+    id: int
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class CertificationItem(BaseModel):
     """Individual certification"""
     name: str = Field(..., description="Certification name (e.g., 'NASM-CPT', 'ACE')")
@@ -79,6 +90,7 @@ class CoachResponse(BaseModel):
     id: int
     user_id: int
     brand_id: int
+    user: Optional[UserInfo] = None  # Nested user info
 
     # Basic Info
     city: str

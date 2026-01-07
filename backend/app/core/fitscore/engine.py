@@ -102,6 +102,7 @@ class FitScoreEngine:
         Score certification match (0.0 to 1.0)
 
         Logic:
+        - If no requirements at all, return 1.0 (perfect match)
         - Must have ALL required certifications (else return 0.0)
         - Base score: 0.7 for meeting requirements
         - Bonus: Up to 0.3 for having preferred certifications
@@ -125,8 +126,12 @@ class FitScoreEngine:
         required = set(job_data.get("required_certifications", []))
         preferred = set(job_data.get("preferred_certifications", []))
 
+        # If no requirements at all, perfect match
+        if not required and not preferred:
+            return 1.0
+
         # Must have all required certifications
-        if not required.issubset(coach_certs):
+        if required and not required.issubset(coach_certs):
             return 0.0
 
         # Base score for meeting requirements
@@ -137,7 +142,7 @@ class FitScoreEngine:
             preferred_match_count = len(coach_certs & preferred)
             preferred_bonus = (preferred_match_count / len(preferred)) * 0.3
         else:
-            preferred_bonus = 0.0
+            preferred_bonus = 0.3  # Full bonus if no preferred requirements
 
         return base_score + preferred_bonus
 
@@ -146,6 +151,7 @@ class FitScoreEngine:
         Score experience match (0.0 to 1.0)
 
         Logic:
+        - If no minimum experience required, return 1.0 (perfect match)
         - Must meet minimum experience requirement (else return 0.0)
         - Base score: 0.7 for meeting minimum
         - Bonus: Up to 0.3 for years beyond minimum (diminishing returns)
@@ -159,6 +165,10 @@ class FitScoreEngine:
         """
         coach_years = coach_data.get("years_experience", 0)
         min_years = job_data.get("min_experience", 0)
+
+        # If no minimum experience required, perfect match
+        if min_years == 0:
+            return 1.0
 
         # Must meet minimum experience
         if coach_years < min_years:
@@ -179,6 +189,7 @@ class FitScoreEngine:
         Score availability overlap (0.0 to 1.0)
 
         Logic:
+        - If no required time slots, return 1.0 (perfect match)
         - Must cover ALL required time slots (else return 0.0)
         - Base score: 0.7 for covering all required slots
         - Bonus: Up to 0.3 for additional flexibility
@@ -192,6 +203,10 @@ class FitScoreEngine:
         """
         coach_slots = set(coach_data.get("available_times", []))
         required_slots = set(job_data.get("required_availability", []))
+
+        # If no required slots, perfect match
+        if not required_slots:
+            return 1.0
 
         # Must cover all required slots
         if not required_slots.issubset(coach_slots):

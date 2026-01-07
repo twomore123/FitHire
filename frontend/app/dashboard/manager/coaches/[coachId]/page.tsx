@@ -21,6 +21,7 @@ async function getCoach(coachId: number, token: string) {
   );
 
   if (!res.ok) {
+    console.error(`Failed to fetch coach ${coachId}: ${res.status} ${res.statusText}`);
     throw new Error("Failed to fetch coach");
   }
 
@@ -44,14 +45,23 @@ export default async function CoachProfilePage({
   const token = await getToken();
   const coachId = parseInt(resolvedParams.coachId);
 
+  console.log(`Fetching coach profile for coach ID: ${coachId}`);
+
   let coach: any = null;
+  let error: string | null = null;
 
   try {
     if (token) {
       coach = await getCoach(coachId, token);
+      console.log(`Coach fetched successfully:`, {
+        id: coach?.id,
+        has_user: !!coach?.user,
+        user_email: coach?.user?.email,
+      });
     }
-  } catch (error) {
-    console.error("Error fetching coach:", error);
+  } catch (err: any) {
+    console.error("Error fetching coach:", err);
+    error = err.message;
   }
 
   if (!coach) {
@@ -64,6 +74,9 @@ export default async function CoachProfilePage({
               <p className="text-muted-foreground mb-4">
                 The coach profile you're looking for doesn't exist or you don't have access to it.
               </p>
+              {error && (
+                <p className="text-sm text-red-600 mb-4">Error: {error}</p>
+              )}
               <Button asChild>
                 <Link href="/dashboard/manager">Back to Dashboard</Link>
               </Button>
@@ -76,11 +89,11 @@ export default async function CoachProfilePage({
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Button variant="ghost" size="sm" className="mb-4" asChild>
-        <Link href="#" onClick={() => window.history.back()}>
-          ← Back
-        </Link>
-      </Button>
+      <div className="mb-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/dashboard/manager">← Back to Jobs</Link>
+        </Button>
+      </div>
 
       <div className="mb-6">
         <h1 className="text-4xl font-bold mb-2">
@@ -249,9 +262,13 @@ export default async function CoachProfilePage({
             <div className="space-y-2">
               <p className="text-sm">
                 <span className="font-semibold">Email:</span>{" "}
-                <a href={`mailto:${coach.user?.email}`} className="text-blue-600 hover:underline">
-                  {coach.user?.email}
-                </a>
+                {coach.user?.email ? (
+                  <a href={`mailto:${coach.user.email}`} className="text-blue-600 hover:underline">
+                    {coach.user.email}
+                  </a>
+                ) : (
+                  <span className="text-muted-foreground">Not available</span>
+                )}
               </p>
             </div>
           </CardContent>

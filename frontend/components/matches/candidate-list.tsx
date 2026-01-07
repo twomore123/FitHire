@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FitScoreDisplay } from "@/components/fitscore/fitscore-display";
@@ -15,6 +16,7 @@ interface Candidate {
   role_type: string;
   years_experience: number;
   certifications: string[];
+  profile_image_url?: string;
   fitscore: number;
   fitscore_breakdown: {
     certification_score: number;
@@ -57,18 +59,30 @@ export function CandidateList({ candidates }: CandidateListProps) {
         <Card key={candidate.coach_id}>
           <CardHeader>
             <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    #{index + 1}
-                  </span>
-                  <CardTitle>
-                    {candidate.first_name} {candidate.last_name}
-                  </CardTitle>
+              <div className="flex gap-4 items-start">
+                {candidate.profile_image_url && (
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-zinc-200 flex-shrink-0">
+                    <Image
+                      src={candidate.profile_image_url}
+                      alt={`${candidate.first_name} ${candidate.last_name}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      #{index + 1}
+                    </span>
+                    <CardTitle>
+                      {candidate.first_name} {candidate.last_name}
+                    </CardTitle>
+                  </div>
+                  <CardDescription>
+                    {candidate.city}, {candidate.state} • {candidate.role_type}
+                  </CardDescription>
                 </div>
-                <CardDescription>
-                  {candidate.city}, {candidate.state} • {candidate.role_type}
-                </CardDescription>
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold text-primary">

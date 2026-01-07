@@ -62,6 +62,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
               typeof cert === 'string' ? cert : (cert.name || 'Unknown')
             )
           : [],
+        profile_image_url: c.coach.profile_image_url,
         fitscore: c.fitscore,
         fitscore_breakdown: {
           certification_score: c.score_breakdown?.cert_score || 0,

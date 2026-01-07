@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScheduleDisplay } from "@/components/ui/schedule-display";
@@ -96,13 +97,25 @@ export default async function CoachProfilePage({
         </Button>
       </div>
 
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold mb-2">
-          {coach.user?.first_name || "Coach"} {coach.user?.last_name || `#${coach.id}`}
-        </h1>
-        <p className="text-muted-foreground">
-          {coach.city}, {coach.state}
-        </p>
+      <div className="flex gap-6 items-start mb-6">
+        {coach.profile_image_url && (
+          <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
+            <Image
+              src={coach.profile_image_url}
+              alt={`${coach.user?.first_name || "Coach"} profile picture`}
+              fill
+              className="object-cover"
+            />
+          </div>
+        )}
+        <div>
+          <h1 className="text-4xl font-bold mb-2">
+            {coach.user?.first_name || "Coach"} {coach.user?.last_name || `#${coach.id}`}
+          </h1>
+          <p className="text-muted-foreground">
+            {coach.city}, {coach.state}
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6">

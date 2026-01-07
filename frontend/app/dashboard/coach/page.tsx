@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,12 +62,24 @@ export default async function CoachProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Coach Profile</h1>
-          <p className="text-muted-foreground">
-            Manage your professional profile and certifications
-          </p>
+      <div className="flex justify-between items-start mb-8">
+        <div className="flex gap-6 items-start">
+          {existingCoach.profile_image_url && (
+            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
+              <Image
+                src={existingCoach.profile_image_url}
+                alt="Profile"
+                fill
+                className="object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Coach Profile</h1>
+            <p className="text-muted-foreground">
+              Manage your professional profile and certifications
+            </p>
+          </div>
         </div>
         <Link href="/dashboard/coach/edit">
           <Button>Edit Profile</Button>

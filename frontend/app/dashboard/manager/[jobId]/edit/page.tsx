@@ -8,7 +8,7 @@ import { jobAPI } from "@/lib/api-client";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function JobEditPage({ params }: { params: { jobId: string } }) {
+export default async function JobEditPage({ params }: { params: Promise<{ jobId: string }> | { jobId: string } }) {
   const user = await currentUser();
   const { getToken } = await auth();
 
@@ -16,8 +16,10 @@ export default async function JobEditPage({ params }: { params: { jobId: string 
     redirect("/sign-in");
   }
 
+  // Await params if it's a Promise (Next.js 15+)
+  const resolvedParams = params instanceof Promise ? await params : params;
   const token = await getToken();
-  const jobId = parseInt(params.jobId);
+  const jobId = parseInt(resolvedParams.jobId);
   let existingJob = null;
 
   // Fetch the existing job

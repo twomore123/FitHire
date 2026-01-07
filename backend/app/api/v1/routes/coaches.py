@@ -122,6 +122,30 @@ async def get_or_create_user(db: Session, current_user: dict) -> User:
         else:
             logger.info(f"Found existing user with ID: {user.id}")
 
+            # Check if user has placeholder data and needs updating
+            needs_update = (
+                user.email.endswith("@unknown.com") or
+                user.email.endswith("@clerk.user") or
+                not user.first_name or
+                not user.last_name
+            )
+
+            if needs_update:
+                logger.info(f"User {user.id} has placeholder data, fetching real data from Clerk")
+                clerk_user_info = await fetch_clerk_user_info(clerk_user_id)
+
+                # Update with real data from Clerk API
+                if clerk_user_info.get("email"):
+                    user.email = clerk_user_info["email"]
+                if clerk_user_info.get("first_name"):
+                    user.first_name = clerk_user_info["first_name"]
+                if clerk_user_info.get("last_name"):
+                    user.last_name = clerk_user_info["last_name"]
+
+                db.commit()
+                db.refresh(user)
+                logger.info(f"Updated user {user.id} with Clerk data: {user.email}")
+
         return user
     except Exception as e:
         logger.error(f"Error in get_or_create_user: {str(e)}")

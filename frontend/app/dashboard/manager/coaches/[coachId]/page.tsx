@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ScheduleDisplay } from "@/components/ui/schedule-display";
 
 // Disable caching for this page
 export const dynamic = 'force-dynamic';
@@ -178,22 +179,13 @@ export default async function CoachProfilePage({
             <CardTitle>Availability</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {coach.available_times && coach.available_times.length > 0 ? (
-                coach.available_times.map((slot: string) => (
-                  <span
-                    key={slot}
-                    className="px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-medium"
-                  >
-                    {slot}
-                  </span>
-                ))
-              ) : (
-                <span className="text-sm text-muted-foreground">
-                  No availability listed
-                </span>
-              )}
-            </div>
+            {coach.available_times && coach.available_times.length > 0 ? (
+              <ScheduleDisplay availableTimes={coach.available_times} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No availability listed
+              </p>
+            )}
           </CardContent>
         </Card>
 

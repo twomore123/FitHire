@@ -81,8 +81,19 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
 
 
 def calculate_profile_completeness(coach_data: dict) -> float:
-    """Calculate profile completeness percentage"""
-    total_fields = 6
+    """
+    Calculate profile completeness percentage
+
+    Core fields (required for 100%):
+    - bio
+    - certifications (at least one)
+    - available_times (at least one)
+    - coaching style tags (at least one type)
+
+    Optional media fields don't affect core completeness.
+    Profile can reach 100% without photo/video.
+    """
+    total_fields = 4
     completed = 0
 
     if coach_data.get("bio"):
@@ -90,10 +101,6 @@ def calculate_profile_completeness(coach_data: dict) -> float:
     if coach_data.get("certifications") and len(coach_data["certifications"]) > 0:
         completed += 1
     if coach_data.get("available_times") and len(coach_data["available_times"]) > 0:
-        completed += 1
-    if coach_data.get("profile_photo_url") or coach_data.get("profile_image_url"):
-        completed += 1
-    if coach_data.get("verified_video_url"):
         completed += 1
     if coach_data.get("lifestyle_tags") or coach_data.get("movement_tags") or coach_data.get("instruction_tags"):
         completed += 1

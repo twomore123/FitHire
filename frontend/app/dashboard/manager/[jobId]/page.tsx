@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button";
 import { CandidateList } from "@/components/matches/candidate-list";
 import { jobAPI } from "@/lib/api-client";
 
-export default async function JobDetailPage({ params }: { params: { jobId: string } }) {
+// Disable caching for this page - each user should see their own data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function JobDetailPage({ params }: { params: Promise<{ jobId: string }> | { jobId: string } }) {
   const user = await currentUser();
   const { getToken } = await auth();
 
@@ -15,22 +19,64 @@ export default async function JobDetailPage({ params }: { params: { jobId: strin
     redirect("/sign-in");
   }
 
+  // Await params if it's a Promise (Next.js 15+)
+  const resolvedParams = params instanceof Promise ? await params : params;
   const token = await getToken();
-  const jobId = parseInt(params.jobId);
+  const jobId = parseInt(resolvedParams.jobId);
+
+  console.log(`JobDetailPage: params.jobId=${resolvedParams.jobId}, parsed jobId=${jobId}, isNaN=${isNaN(jobId)}`);
+
   let job: any = null;
   let candidates: any[] = [];
 
   try {
     if (token) {
+      // Validate jobId is a valid number
+      if (isNaN(jobId)) {
+        console.error(`Invalid job ID: ${resolvedParams.jobId} (parsed as ${jobId})`);
+        throw new Error("Invalid job ID");
+      }
+
+      console.log(`Fetching job ${jobId}...`);
+
       // Fetch job details
       job = await jobAPI.get(jobId, token);
+      console.log(`Job fetched successfully:`, job?.id, job?.title);
 
       // Fetch candidates for this job
+      console.log(`Fetching candidates for job ${jobId}...`);
       const candidatesData = await jobAPI.getCandidates(jobId, 20, token);
-      candidates = candidatesData.candidates || [];
+
+      // Transform candidates to match CandidateList interface
+      candidates = (candidatesData.candidates || []).map((c: any) => ({
+        coach_id: c.coach.id,
+        first_name: "Coach", // TODO: Get from user table
+        last_name: `#${c.coach.id}`,
+        email: `coach${c.coach.id}@example.com`, // TODO: Get from user table
+        city: c.coach.city,
+        state: c.coach.state,
+        role_type: "Fitness Coach",
+        years_experience: c.coach.years_experience || 0,
+        certifications: Array.isArray(c.coach.certifications)
+          ? c.coach.certifications.map((cert: any) =>
+              typeof cert === 'string' ? cert : (cert.name || 'Unknown')
+            )
+          : [],
+        fitscore: c.fitscore,
+        fitscore_breakdown: {
+          certification_score: c.score_breakdown?.cert_score || 0,
+          experience_score: c.score_breakdown?.experience_score || 0,
+          availability_score: c.score_breakdown?.availability_score || 0,
+          location_score: c.score_breakdown?.location_score || 0,
+          culture_score: c.score_breakdown?.culture_score || 0,
+          engagement_score: c.score_breakdown?.engagement_score || 0,
+        },
+      }));
+      console.log(`Found ${candidates.length} candidates`);
     }
-  } catch (error) {
-    console.log("Error fetching job or candidates:", error);
+  } catch (error: any) {
+    console.error("Error fetching job or candidates:", error);
+    console.error("Error details:", error.message, error.status, error.details);
   }
 
   if (!job) {

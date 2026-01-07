@@ -5,6 +5,11 @@ import { auth } from "@clerk/nextjs/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { coachAPI } from "@/lib/api-client";
+import { ScheduleDisplay } from "@/components/ui/schedule-display";
+
+// Disable caching for this page - each user should see their own data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function CoachProfilePage() {
   const user = await currentUser();
@@ -135,22 +140,14 @@ export default async function CoachProfilePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Availability</CardTitle>
+            <CardDescription>Your available time slots</CardDescription>
           </CardHeader>
           <CardContent>
             {existingCoach.available_times && existingCoach.available_times.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {existingCoach.available_times.map((slot: string) => (
-                  <span
-                    key={slot}
-                    className="px-2 py-1 bg-zinc-100 rounded-md text-xs font-medium"
-                  >
-                    {slot}
-                  </span>
-                ))}
-              </div>
+              <ScheduleDisplay availableTimes={existingCoach.available_times} />
             ) : (
               <p className="text-sm text-muted-foreground">
                 No availability set. Click "Edit Profile" to set your available times.

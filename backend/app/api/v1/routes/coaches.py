@@ -5,41 +5,102 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from datetime import datetime
+import logging
 
 from app.db.session import get_db
 from app.models.coach import Coach
 from app.models.job import Job
 from app.models.brand import Location
+from app.models.user import User
 from app.schemas.coach import CoachCreate, CoachUpdate, CoachResponse, CoachListResponse
 from app.schemas.match import CoachMatchesResponse, CoachMatchResult, FitScoreBreakdown
 from app.utils.auth import get_current_user
 from app.core.fitscore.engine import FitScoreEngine
 
 router = APIRouter(prefix="/coaches", tags=["coaches"])
+logger = logging.getLogger(__name__)
+
+
+def get_or_create_user(db: Session, current_user: dict) -> User:
+    """
+    Get or create a User record from Clerk authentication
+
+    Args:
+        db: Database session
+        current_user: Decoded JWT payload from Clerk
+
+    Returns:
+        User: The user record
+    """
+    try:
+        clerk_user_id = current_user.get("sub")
+        logger.info(f"JWT payload keys: {list(current_user.keys())}")
+        logger.info(f"Clerk user ID: {clerk_user_id}")
+
+        if not clerk_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication token: missing user ID"
+            )
+
+        # Try to find existing user
+        user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
+
+        if not user:
+            # Create new user record
+            # Extract email from JWT - Clerk uses different field names
+            email = (
+                current_user.get("email") or
+                current_user.get("email_address") or
+                current_user.get("primary_email") or
+                f"{clerk_user_id}@clerk.user"
+            )
+
+            logger.info(f"Creating new user with email: {email}")
+
+            user = User(
+                clerk_user_id=clerk_user_id,
+                email=email,
+                first_name=current_user.get("given_name") or current_user.get("first_name"),
+                last_name=current_user.get("family_name") or current_user.get("last_name"),
+                role="coach",  # Default role for new users
+                brand_id=1  # Default brand for Phase 1
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            logger.info(f"Created user with ID: {user.id}")
+        else:
+            logger.info(f"Found existing user with ID: {user.id}")
+
+        return user
+    except Exception as e:
+        logger.error(f"Error in get_or_create_user: {str(e)}")
+        logger.error(f"JWT payload: {current_user}")
+        raise
 
 
 def calculate_profile_completeness(coach_data: dict) -> float:
-    """Calculate profile completeness percentage"""
-    total_fields = 10
+    """
+    Calculate profile completeness percentage
+
+    Core fields (required for 100%):
+    - bio
+    - certifications (at least one)
+    - available_times (at least one)
+    - coaching style tags (at least one type)
+
+    Optional media fields don't affect core completeness.
+    Profile can reach 100% without photo/video.
+    """
+    total_fields = 4
     completed = 0
 
-    if coach_data.get("first_name"):
-        completed += 1
-    if coach_data.get("last_name"):
-        completed += 1
-    if coach_data.get("email"):
-        completed += 1
-    if coach_data.get("phone"):
-        completed += 1
     if coach_data.get("bio"):
         completed += 1
     if coach_data.get("certifications") and len(coach_data["certifications"]) > 0:
         completed += 1
     if coach_data.get("available_times") and len(coach_data["available_times"]) > 0:
-        completed += 1
-    if coach_data.get("profile_photo_url"):
-        completed += 1
-    if coach_data.get("verified_video_url"):
         completed += 1
     if coach_data.get("lifestyle_tags") or coach_data.get("movement_tags") or coach_data.get("instruction_tags"):
         completed += 1
@@ -66,11 +127,11 @@ async def create_coach(
             detail=f"Location {coach_data.location_id} not found"
         )
 
-    # TODO: Get actual user_id from current_user/Clerk
-    user_id = 1
+    # Get or create user from Clerk authentication
+    user = get_or_create_user(db, current_user)
 
     # Check if coach already exists for this user
-    existing_coach = db.query(Coach).filter(Coach.user_id == user_id).first()
+    existing_coach = db.query(Coach).filter(Coach.user_id == user.id).first()
     if existing_coach:
         # Update existing coach instead of creating new one
         existing_coach.brand_id = location.brand_id
@@ -98,7 +159,7 @@ async def create_coach(
 
     # Create coach (only set fields that exist in Coach model)
     new_coach = Coach(
-        user_id=user_id,
+        user_id=user.id,
         brand_id=location.brand_id,
         city=coach_data.city,
         state=coach_data.state,
@@ -132,13 +193,24 @@ async def get_coach(
     """
     Get a single coach profile by ID
 
-    Requires authentication.
+    Requires authentication. Users can only view their own coach profiles.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Coach {coach_id} not found"
+        )
+
+    # Verify that this coach belongs to the current user
+    # (Managers and admins viewing candidates will use the matches endpoint)
+    if coach.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this coach profile"
         )
 
     return coach
@@ -157,14 +229,15 @@ async def list_coaches(
     """
     List coaches with pagination and filtering
 
-    Requires authentication. Users see coaches in their authorized locations.
+    Requires authentication. Users see only their own coach profiles.
     """
-    query = db.query(Coach)
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
 
-    # Apply filters (only using fields that exist in Coach model)
-    # Note: Coach model doesn't have location_id, role_type, or status fields
-    # TODO: Add proper filtering when needed
+    # Start with query filtered by current user
+    query = db.query(Coach).filter(Coach.user_id == user.id)
 
+    # Apply additional filters
     # Filter by verified coaches only if status filter is requested
     if status == "verified":
         query = query.filter(Coach.verified_at.isnot(None))
@@ -197,13 +270,24 @@ async def update_coach(
     """
     Update a coach profile
 
-    Requires authentication. Only updates provided fields (partial update).
+    Requires authentication. Users can only update their own coach profiles.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
+    # Fetch the coach and verify ownership
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Coach {coach_id} not found"
+        )
+
+    # Verify that this coach belongs to the current user
+    if coach.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to update this coach profile"
         )
 
     # Update fields if provided (only fields that exist in Coach model)
@@ -215,16 +299,18 @@ async def update_coach(
     }
 
     for field, value in update_data.items():
-        # Skip fields that don't exist in Coach model
-        if field in ["first_name", "last_name", "email", "phone", "role_type", "location_id"]:
-            continue
-
         # Map field names
         model_field = field_mapping.get(field, field)
 
         if field == "certifications" and value is not None:
-            # Convert Pydantic models to dicts
-            setattr(coach, model_field, [cert.model_dump() for cert in value])
+            # Handle both Pydantic models and plain dicts from frontend
+            certs = []
+            for cert in value:
+                if isinstance(cert, dict):
+                    certs.append(cert)  # Already a dict
+                else:
+                    certs.append(cert.model_dump())  # Pydantic model
+            setattr(coach, model_field, certs)
         elif field in ["profile_photo_url", "verified_video_url"] and value is not None:
             # Convert HttpUrl to string
             setattr(coach, model_field, str(value) if value else None)
@@ -268,7 +354,10 @@ async def get_coach_matches(
     Returns jobs ranked by FitScore, filtered by the job's threshold.
     Only returns jobs with status='open'.
     """
-    # Get coach
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
+    # Get coach and verify ownership
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
@@ -276,10 +365,17 @@ async def get_coach_matches(
             detail=f"Coach {coach_id} not found"
         )
 
+    # Verify that this coach belongs to the current user
+    if coach.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view matches for this coach profile"
+        )
+
     # Get all open jobs in the same city (Phase 1: exact city match only)
     jobs = db.query(Job).filter(
         and_(
-            Job.status == "open",
+            Job.is_active == True,
             Job.city == coach.city,
             Job.state == coach.state
         )

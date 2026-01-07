@@ -15,7 +15,7 @@ const DAY_ABBREVIATIONS: { [key: string]: string } = {
   Monday: "Mon",
   Tuesday: "Tue",
   Wednesday: "Wed",
-  Thursday: "Thurs",
+  Thursday: "Thu",
   Friday: "Fri",
   Saturday: "Sat",
   Sunday: "Sun",

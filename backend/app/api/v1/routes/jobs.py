@@ -5,17 +5,79 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import datetime
+import logging
 
 from app.db.session import get_db
 from app.models.job import Job
 from app.models.coach import Coach
 from app.models.brand import Location
+from app.models.user import User
 from app.schemas.job import JobCreate, JobUpdate, JobResponse, JobListResponse
 from app.schemas.match import JobCandidatesResponse, JobCandidateResult, FitScoreBreakdown
 from app.utils.auth import get_current_user
 from app.core.fitscore.engine import FitScoreEngine
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+logger = logging.getLogger(__name__)
+
+
+def get_or_create_user(db: Session, current_user: dict) -> User:
+    """
+    Get or create a User record from Clerk authentication
+
+    Args:
+        db: Database session
+        current_user: Decoded JWT payload from Clerk
+
+    Returns:
+        User: The user record
+    """
+    try:
+        clerk_user_id = current_user.get("sub")
+        logger.info(f"JWT payload keys: {list(current_user.keys())}")
+        logger.info(f"Clerk user ID: {clerk_user_id}")
+
+        if not clerk_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication token: missing user ID"
+            )
+
+        # Try to find existing user
+        user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
+
+        if not user:
+            # Create new user record
+            # Extract email from JWT - Clerk uses different field names
+            email = (
+                current_user.get("email") or
+                current_user.get("email_address") or
+                current_user.get("primary_email") or
+                f"{clerk_user_id}@clerk.user"
+            )
+
+            logger.info(f"Creating new user with email: {email}")
+
+            user = User(
+                clerk_user_id=clerk_user_id,
+                email=email,
+                first_name=current_user.get("given_name") or current_user.get("first_name"),
+                last_name=current_user.get("family_name") or current_user.get("last_name"),
+                role="location_manager",  # Default role for job creators
+                brand_id=1  # Default brand for Phase 1
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            logger.info(f"Created user with ID: {user.id}")
+        else:
+            logger.info(f"Found existing user with ID: {user.id}")
+
+        return user
+    except Exception as e:
+        logger.error(f"Error in get_or_create_user: {str(e)}")
+        logger.error(f"JWT payload: {current_user}")
+        raise
 
 
 @router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
@@ -29,6 +91,8 @@ async def create_job(
 
     Requires authentication. Users can only create jobs in their authorized locations.
     """
+    logger.info(f"Creating job: {job_data.title}")
+
     # Verify location exists and user has access
     location = db.query(Location).filter(Location.id == job_data.location_id).first()
     if not location:
@@ -37,12 +101,14 @@ async def create_job(
             detail=f"Location {job_data.location_id} not found"
         )
 
-    # TODO: Get actual user_id from current_user/Clerk
-    user_id = 1
+    # Get or create user from Clerk authentication
+    user = get_or_create_user(db, current_user)
+
+    logger.info(f"Job being created by user ID: {user.id}")
 
     # Create job (only set fields that exist in Job model)
     new_job = Job(
-        created_by=user_id,
+        created_by=user.id,
         brand_id=location.brand_id,
         location_id=job_data.location_id,
         title=job_data.title,
@@ -58,6 +124,7 @@ async def create_job(
         compensation_min=int(job_data.compensation_min) if job_data.compensation_min else None,
         compensation_max=int(job_data.compensation_max) if job_data.compensation_max else None,
         weighting_preset=job_data.weighting_preset,
+        custom_weights=job_data.custom_weights,  # Add custom_weights field
         fitscore_threshold=job_data.fitscore_threshold,
         is_active=True  # New jobs are active by default
     )
@@ -78,15 +145,31 @@ async def get_job(
     """
     Get a single job listing by ID
 
-    Requires authentication.
+    Requires authentication. Users can only view their own jobs.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+    logger.info(f"User {user.id} requesting job {job_id}")
+
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
+        logger.error(f"Job {job_id} not found in database")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job {job_id} not found"
         )
 
+    logger.info(f"Job {job_id} found, created_by={job.created_by}, requesting_user={user.id}")
+
+    # Verify that this job belongs to the current user
+    if job.created_by != user.id:
+        logger.error(f"User {user.id} does not own job {job_id} (owned by {job.created_by})")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this job listing"
+        )
+
+    logger.info(f"Access granted to job {job_id}")
     return job
 
 
@@ -103,11 +186,15 @@ async def list_jobs(
     """
     List jobs with pagination and filtering
 
-    Requires authentication. Users see jobs in their authorized locations.
+    Requires authentication. Users see only their own job listings.
     """
-    query = db.query(Job)
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
 
-    # Apply filters
+    # Start with query filtered by current user
+    query = db.query(Job).filter(Job.created_by == user.id)
+
+    # Apply additional filters
     if location_id:
         query = query.filter(Job.location_id == location_id)
     if role_type:
@@ -141,13 +228,23 @@ async def update_job(
     """
     Update a job listing
 
-    Requires authentication. Only updates provided fields (partial update).
+    Requires authentication. Users can only update their own jobs.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job {job_id} not found"
+        )
+
+    # Verify that this job belongs to the current user
+    if job.created_by != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to update this job listing"
         )
 
     # Update fields if provided
@@ -174,13 +271,23 @@ async def delete_job(
     """
     Delete a job listing
 
-    Requires authentication and appropriate permissions.
+    Requires authentication. Users can only delete their own jobs.
     """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job {job_id} not found"
+        )
+
+    # Verify that this job belongs to the current user
+    if job.created_by != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this job listing"
         )
 
     db.delete(job)
@@ -202,7 +309,10 @@ async def get_job_candidates(
     Returns coaches ranked by FitScore, filtered by the job's threshold.
     Only returns coaches with status='verified'.
     """
-    # Get job
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
+    # Get job and verify ownership
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(
@@ -210,9 +320,18 @@ async def get_job_candidates(
             detail=f"Job {job_id} not found"
         )
 
+    # Verify that this job belongs to the current user
+    if job.created_by != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view candidates for this job listing"
+        )
+
     # Get all verified coaches in the same city (Phase 1: exact city match only)
     # Note: Coach model doesn't have status or role_type fields
     # verified_at is used to determine if coach is verified
+    logger.info(f"Looking for coaches in {job.city}, {job.state}")
+
     coaches = db.query(Coach).filter(
         and_(
             Coach.verified_at.isnot(None),  # Coach is verified if verified_at is set
@@ -220,6 +339,8 @@ async def get_job_candidates(
             Coach.state == job.state
         )
     ).all()
+
+    logger.info(f"Found {len(coaches)} verified coaches in {job.city}, {job.state}")
 
     # Calculate FitScore for each coach
     engine = FitScoreEngine()
@@ -237,6 +358,7 @@ async def get_job_candidates(
     }
 
     threshold = float(job.fitscore_threshold) if job.fitscore_threshold else 0.60
+    logger.info(f"FitScore threshold: {threshold}")
 
     for coach in coaches:
         coach_data = {
@@ -260,15 +382,22 @@ async def get_job_candidates(
             custom_weights=job.custom_weights
         )
 
+        logger.info(f"Coach {coach.id}: FitScore={score.fitscore:.2f}, Threshold={threshold}")
+
         # Only include if above threshold
         if score.fitscore >= threshold:
+            logger.info(f"Coach {coach.id} PASSES threshold")
             candidates.append({
                 "coach": coach,
                 "score": score
             })
+        else:
+            logger.info(f"Coach {coach.id} FAILS threshold")
 
     # Sort by FitScore descending
     candidates.sort(key=lambda x: x["score"].fitscore, reverse=True)
+
+    logger.info(f"Total candidates above threshold: {len(candidates)}")
 
     # Limit to top N candidates
     candidates = candidates[:limit]
@@ -290,6 +419,8 @@ async def get_job_candidates(
             ),
             rank=rank
         ))
+
+    logger.info(f"Returning {len(candidate_results)} candidates for job {job_id}")
 
     return JobCandidatesResponse(
         job_id=job_id,

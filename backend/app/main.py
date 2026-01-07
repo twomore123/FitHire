@@ -1,12 +1,19 @@
 """FitHire FastAPI Application Entry Point"""
 
+import logging
+import traceback
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from app.config import settings
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create FastAPI application
 app = FastAPI(
@@ -16,6 +23,24 @@ app = FastAPI(
     docs_url="/docs" if settings.is_development else None,  # Disable docs in production
     redoc_url="/redoc" if settings.is_development else None,
 )
+
+
+# Add validation error handler to log details
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Log validation errors with full details"""
+    logger.error(f"Validation error for {request.method} {request.url}")
+    logger.error(f"Request body: {await request.body()}")
+    logger.error(f"Validation errors: {exc.errors()}")
+    logger.error(f"Request body details: {exc.body}")
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.errors(),
+            "body": exc.body
+        }
+    )
 
 # Custom CORS middleware to handle Vercel deployment URLs
 class CustomCORSMiddleware(BaseHTTPMiddleware):
@@ -60,10 +85,15 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
         except Exception as e:
+            # Log the full error traceback
+            logger.error(f"Unhandled exception in request: {request.method} {request.url}")
+            logger.error(f"Error: {str(e)}")
+            logger.error(traceback.format_exc())
+
             # If there's an exception, create an error response with CORS headers
             response = JSONResponse(
                 status_code=500,
-                content={"detail": "Internal server error"}
+                content={"detail": "Internal server error", "error": str(e)}
             )
 
         # Add CORS headers to response (both success and error responses)

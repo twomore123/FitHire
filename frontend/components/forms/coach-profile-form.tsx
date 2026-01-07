@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScheduleSelector } from "@/components/ui/schedule-selector";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { coachAPI } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 
@@ -73,6 +74,7 @@ export function CoachProfileForm({ initialData, coachId, token }: CoachProfileFo
     movement_tags: initialData?.movement_tags || [],
     instruction_tags: initialData?.instruction_tags || [],
     bio: initialData?.bio || "",
+    profile_image_url: initialData?.profile_image_url || "",
   });
 
   const [selectedCertifications, setSelectedCertifications] = useState<string[]>(
@@ -293,6 +295,23 @@ export function CoachProfileForm({ initialData, coachId, token }: CoachProfileFo
           <p className="text-xs text-muted-foreground mt-1">
             {formData.bio.length}/2000 characters
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Profile Picture */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Picture</CardTitle>
+          <CardDescription>Upload a professional photo</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ImageUpload
+            value={formData.profile_image_url}
+            onChange={(url) => setFormData({ ...formData, profile_image_url: url })}
+            folder="profile-pictures"
+            label="Profile Photo"
+            aspectRatio="square"
+          />
         </CardContent>
       </Card>
 

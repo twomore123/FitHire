@@ -50,9 +50,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
       // Transform candidates to match CandidateList interface
       candidates = (candidatesData.candidates || []).map((c: any) => ({
         coach_id: c.coach.id,
-        first_name: "Coach", // TODO: Get from user table
-        last_name: `#${c.coach.id}`,
-        email: `coach${c.coach.id}@example.com`, // TODO: Get from user table
+        first_name: c.coach.user?.first_name || "Coach",
+        last_name: c.coach.user?.last_name || `#${c.coach.id}`,
+        email: c.coach.user?.email || "",
         city: c.coach.city,
         state: c.coach.state,
         role_type: "Fitness Coach",

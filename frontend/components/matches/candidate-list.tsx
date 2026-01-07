@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FitScoreDisplay } from "@/components/fitscore/fitscore-display";
@@ -107,10 +108,14 @@ export function CandidateList({ candidates }: CandidateListProps) {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button size="sm">View Full Profile</Button>
-                  <Button size="sm" variant="outline">
-                    Contact
-                  </Button>
+                  <Link href={`/dashboard/manager/coaches/${candidate.coach_id}`}>
+                    <Button size="sm">View Full Profile</Button>
+                  </Link>
+                  <a href={`mailto:${candidate.email}`}>
+                    <Button size="sm" variant="outline">
+                      Contact
+                    </Button>
+                  </a>
                 </div>
               </div>
 

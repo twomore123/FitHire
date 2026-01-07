@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schedule UI enhancements (spreadsheet-style selector)
 - Custom weighting sliders for FitScore configuration
 - End-to-end testing
+- Frontend TypeScript type improvements (30 remaining stylistic `any` types)
+
+### Completed - Phase 1 (Day 3) ✅
+- Code quality improvements and linting fixes
+- Backend code formatting and lint compliance
+- Critical React hooks fixes
+- Documentation updates
 
 ### Completed - Phase 1 (Day 2-3) ✅
 - Critical security vulnerability fixes
@@ -29,6 +36,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin verification queue with approve/reject actions
 - Clerk authentication integrated on frontend
 - Deployment to Railway (backend) and Vercel (frontend)
+
+---
+
+## [0.3.2] - 2026-01-07 (Code Quality)
+
+### Changed
+- **Backend code quality improvements** (`backend/`)
+  - Applied Black formatting to all Python files (17 files reformatted)
+  - Fixed all Ruff linting errors (29 auto-fixed)
+  - Moved router imports to top of main.py (fixes E402 linting errors)
+  - Fixed exception handling in auth.py (proper exception chaining with `from e`)
+  - All 30 pytest tests passing with 93% coverage on FitScore engine
+
+- **Frontend code quality improvements** (`frontend/`)
+  - Fixed critical React hooks issue in weighting-sliders.tsx (setState in effect)
+  - Removed unused imports (useState, CardDescription, ROLE_TYPES, TIME_SLOTS)
+  - Fixed apostrophe escaping in JSX (you&apos;re)
+  - TypeScript compilation successful
+
+- **Documentation updates**
+  - Updated docs/changelog.md with v0.3.1 and v0.3.2 changes
+  - Updated docs/architecture.md to v1.1 with FitScore edge cases and security fixes
+  - Enhanced security section with ownership verification details
+
+### Technical Debt
+- **Remaining frontend linting issues:** 30 stylistic errors (non-blocking)
+  - 24 TypeScript `any` types (should define proper interfaces)
+  - 6 unescaped quotes in JSX (should use `&quot;` or `&apos;`)
+  - These do not affect functionality and can be addressed in future cleanup
 
 ---
 

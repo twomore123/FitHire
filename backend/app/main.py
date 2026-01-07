@@ -9,6 +9,9 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
+from app.api.v1.routes.admin import router as admin_router
+from app.api.v1.routes.coaches import router as coaches_router
+from app.api.v1.routes.jobs import router as jobs_router
 from app.config import settings
 
 # Configure logging
@@ -137,10 +140,6 @@ async def root():
 
 
 # API v1 routes
-from app.api.v1.routes.admin import router as admin_router
-from app.api.v1.routes.coaches import router as coaches_router
-from app.api.v1.routes.jobs import router as jobs_router
-
 app.include_router(coaches_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")

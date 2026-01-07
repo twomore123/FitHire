@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 from datetime import datetime
 import logging
+import httpx
 
 from app.db.session import get_db
 from app.models.job import Job
@@ -16,12 +17,45 @@ from app.schemas.job import JobCreate, JobUpdate, JobResponse, JobListResponse
 from app.schemas.match import JobCandidatesResponse, JobCandidateResult, FitScoreBreakdown
 from app.utils.auth import get_current_user
 from app.core.fitscore.engine import FitScoreEngine
+from app.config import settings
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 logger = logging.getLogger(__name__)
 
 
-def get_or_create_user(db: Session, current_user: dict) -> User:
+async def fetch_clerk_user_info(clerk_user_id: str) -> dict:
+    """
+    Fetch user information from Clerk API
+
+    Args:
+        clerk_user_id: Clerk user ID (from JWT sub claim)
+
+    Returns:
+        dict: User info from Clerk API including email, first_name, last_name
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://api.clerk.com/v1/users/{clerk_user_id}",
+                headers={"Authorization": f"Bearer {settings.clerk_secret_key}"}
+            )
+            if response.status_code == 200:
+                user_data = response.json()
+                logger.info(f"Fetched Clerk user info for {clerk_user_id}")
+                return {
+                    "email": user_data.get("email_addresses", [{}])[0].get("email_address"),
+                    "first_name": user_data.get("first_name"),
+                    "last_name": user_data.get("last_name"),
+                }
+            else:
+                logger.warning(f"Failed to fetch Clerk user info: {response.status_code}")
+                return {}
+    except Exception as e:
+        logger.error(f"Error fetching Clerk user info: {str(e)}")
+        return {}
+
+
+async def get_or_create_user(db: Session, current_user: dict) -> User:
     """
     Get or create a User record from Clerk authentication
 
@@ -47,13 +81,28 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
         user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
 
         if not user:
-            # Create new user record
-            # Extract email from JWT - Clerk uses different field names
+            # Fetch user info from Clerk API
+            clerk_user_info = await fetch_clerk_user_info(clerk_user_id)
+
+            # Extract email - try JWT first, then Clerk API, finally use fallback
             email = (
                 current_user.get("email") or
                 current_user.get("email_address") or
                 current_user.get("primary_email") or
-                f"{clerk_user_id}@clerk.user"
+                clerk_user_info.get("email") or
+                f"{clerk_user_id}@unknown.com"
+            )
+
+            first_name = (
+                current_user.get("given_name") or
+                current_user.get("first_name") or
+                clerk_user_info.get("first_name")
+            )
+
+            last_name = (
+                current_user.get("family_name") or
+                current_user.get("last_name") or
+                clerk_user_info.get("last_name")
             )
 
             logger.info(f"Creating new user with email: {email}")
@@ -61,8 +110,8 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
             user = User(
                 clerk_user_id=clerk_user_id,
                 email=email,
-                first_name=current_user.get("given_name") or current_user.get("first_name"),
-                last_name=current_user.get("family_name") or current_user.get("last_name"),
+                first_name=first_name,
+                last_name=last_name,
                 role="location_manager",  # Default role for job creators
                 brand_id=1  # Default brand for Phase 1
             )
@@ -102,7 +151,7 @@ async def create_job(
         )
 
     # Get or create user from Clerk authentication
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     logger.info(f"Job being created by user ID: {user.id}")
 
@@ -148,7 +197,7 @@ async def get_job(
     Requires authentication. Users can only view their own jobs.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
     logger.info(f"User {user.id} requesting job {job_id}")
 
     job = db.query(Job).filter(Job.id == job_id).first()
@@ -189,7 +238,7 @@ async def list_jobs(
     Requires authentication. Users see only their own job listings.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     # Start with query filtered by current user
     query = db.query(Job).filter(Job.created_by == user.id)
@@ -231,7 +280,7 @@ async def update_job(
     Requires authentication. Users can only update their own jobs.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
@@ -274,7 +323,7 @@ async def delete_job(
     Requires authentication. Users can only delete their own jobs.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
@@ -310,7 +359,7 @@ async def get_job_candidates(
     Only returns coaches with status='verified'.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     # Get job and verify ownership
     job = db.query(Job).filter(Job.id == job_id).first()

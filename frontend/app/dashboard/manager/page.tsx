@@ -28,9 +28,22 @@ export default async function ManagerJobsPage() {
       const jobsData = await jobAPI.list({ page: 1, page_size: 20 }, token);
       jobs = jobsData.jobs || [];
       totalJobs = jobsData.total || 0;
+
+      // Debug: log jobs to see if IDs are present
+      console.log("Fetched jobs:", jobs.length);
+      jobs.forEach((job, idx) => {
+        console.log(`Job ${idx}: id=${job.id}, title=${job.title}`);
+        if (!job.id) {
+          console.error(`Job ${idx} has no ID!`, job);
+        }
+      });
+
+      // Filter out any jobs without valid IDs
+      jobs = jobs.filter(job => job.id && typeof job.id === 'number');
+      console.log("Valid jobs after filtering:", jobs.length);
     }
   } catch (error) {
-    console.log("Error fetching jobs:", error);
+    console.error("Error fetching jobs:", error);
   }
 
   const activeJobs = jobs.filter(job => job.is_active).length;

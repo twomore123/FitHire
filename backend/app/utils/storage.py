@@ -66,13 +66,17 @@ class R2Storage:
             )
 
             # Generate public URL
+            # Use the custom public URL if configured, otherwise use R2 endpoint
             if self.public_url:
                 url = f"{self.public_url}/{key}"
             else:
-                # Fallback to R2 endpoint URL
-                url = f"{self.r2_endpoint}/{self.bucket_name}/{key}"
+                # Fallback to R2 endpoint (requires bucket to have public access enabled)
+                # Extract account ID from endpoint
+                endpoint_host = self.client.meta.endpoint_url.replace('https://', '')
+                url = f"https://pub-{endpoint_host.split('.')[0]}.r2.dev/{key}"
 
             logger.info(f"Uploaded file to R2: {key}")
+            logger.info(f"Public URL: {url}")
             return url
 
         except ClientError as e:

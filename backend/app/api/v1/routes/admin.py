@@ -1,9 +1,10 @@
 """Admin verification and management endpoints"""
 
+from datetime import datetime
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 from app.db.session import get_db
 from app.models.coach import Coach
@@ -15,8 +16,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 @router.get("/verification-queue", response_model=List[CoachResponse])
 async def get_verification_queue(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
 ):
     """
     Get list of coaches pending verification
@@ -29,18 +29,16 @@ async def get_verification_queue(
     #     raise HTTPException(status_code=403, detail="Admin access required")
 
     # Get all unverified coaches
-    pending_coaches = db.query(Coach).filter(
-        Coach.verified_at.is_(None)
-    ).order_by(Coach.created_at.desc()).all()
+    pending_coaches = (
+        db.query(Coach).filter(Coach.verified_at.is_(None)).order_by(Coach.created_at.desc()).all()
+    )
 
     return pending_coaches
 
 
 @router.post("/verify-coach/{coach_id}", response_model=CoachResponse)
 async def verify_coach(
-    coach_id: int,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    coach_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
 ):
     """
     Approve and verify a coach profile
@@ -56,8 +54,7 @@ async def verify_coach(
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Coach {coach_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Coach {coach_id} not found"
         )
 
     # Verify coach
@@ -71,9 +68,7 @@ async def verify_coach(
 
 @router.post("/reject-coach/{coach_id}")
 async def reject_coach(
-    coach_id: int,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    coach_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
 ):
     """
     Reject a coach profile verification
@@ -90,8 +85,7 @@ async def reject_coach(
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Coach {coach_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Coach {coach_id} not found"
         )
 
     # Unset verification

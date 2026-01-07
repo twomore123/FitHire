@@ -1,10 +1,11 @@
 """Unit tests for FitScore calculation engine"""
 
 from datetime import datetime, timedelta
+
 import pytest
 
 from app.core.fitscore.engine import FitScoreEngine, MatchScore
-from app.core.fitscore.presets import WEIGHTING_PRESETS, validate_preset, get_preset
+from app.core.fitscore.presets import WEIGHTING_PRESETS, get_preset, validate_preset
 
 
 class TestWeightingPresets:
@@ -61,9 +62,7 @@ class TestCertificationScoring:
 
     def test_preferred_certifications_bonus(self):
         """Having preferred certifications should add bonus"""
-        coach = {
-            "certifications": [{"name": "NASM-CPT"}, {"name": "RYT-200"}]
-        }
+        coach = {"certifications": [{"name": "NASM-CPT"}, {"name": "RYT-200"}]}
         job = {
             "required_certifications": ["NASM-CPT"],
             "preferred_certifications": ["RYT-200"],
@@ -354,12 +353,8 @@ class TestFullMatchScore:
         }
 
         balanced_score = self.engine.calculate_match(coach, job, preset="balanced")
-        exp_heavy_score = self.engine.calculate_match(
-            coach, job, preset="experience_heavy"
-        )
-        culture_heavy_score = self.engine.calculate_match(
-            coach, job, preset="culture_heavy"
-        )
+        exp_heavy_score = self.engine.calculate_match(coach, job, preset="experience_heavy")
+        culture_heavy_score = self.engine.calculate_match(coach, job, preset="culture_heavy")
 
         # Scores should differ based on preset emphasis
         assert balanced_score.fitscore != exp_heavy_score.fitscore

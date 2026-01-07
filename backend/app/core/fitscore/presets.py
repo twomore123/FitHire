@@ -77,8 +77,7 @@ def get_preset(preset_name: str) -> Dict[str, float]:
     """
     if preset_name not in WEIGHTING_PRESETS:
         raise ValueError(
-            f"Unknown preset '{preset_name}'. "
-            f"Available: {', '.join(WEIGHTING_PRESETS.keys())}"
+            f"Unknown preset '{preset_name}'. " f"Available: {', '.join(WEIGHTING_PRESETS.keys())}"
         )
 
     return WEIGHTING_PRESETS[preset_name]

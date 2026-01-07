@@ -9,9 +9,9 @@ Deterministic scoring algorithm that ranks coach-job matches based on:
 6. Engagement (profile quality and recency)
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, Optional
 
 from app.core.fitscore.presets import get_preset
 
@@ -49,7 +49,11 @@ class FitScoreEngine:
     """
 
     def calculate_match(
-        self, coach_data: Dict, job_data: Dict, preset: str = "balanced", custom_weights: Optional[Dict[str, float]] = None
+        self,
+        coach_data: Dict,
+        job_data: Dict,
+        preset: str = "balanced",
+        custom_weights: Optional[Dict[str, float]] = None,
     ) -> MatchScore:
         """
         Calculate complete FitScore for a coach-job pair
@@ -315,9 +319,7 @@ class FitScoreEngine:
             if isinstance(last_updated, str):
                 # Parse ISO format datetime string
                 try:
-                    last_updated = datetime.fromisoformat(
-                        last_updated.replace("Z", "+00:00")
-                    )
+                    last_updated = datetime.fromisoformat(last_updated.replace("Z", "+00:00"))
                 except (ValueError, AttributeError):
                     last_updated = None
 

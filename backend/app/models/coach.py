@@ -1,7 +1,8 @@
 """Coach model for fitness professional profiles"""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Numeric
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -32,9 +33,7 @@ class Coach(Base):
     specialties = Column(JSONB, nullable=True)  # ["HIIT", "Cycling", "Strength Training"]
 
     # Availability (array of time slots)
-    available_times = Column(
-        JSONB, nullable=False
-    )  # ["Mon AM", "Wed PM", "Fri AM", "Sat AM"]
+    available_times = Column(JSONB, nullable=False)  # ["Mon AM", "Wed PM", "Fri AM", "Sat AM"]
 
     # Culture/Style Tags (admin-assigned)
     lifestyle_tags = Column(JSONB, nullable=True)  # ["wellness", "community", "high-energy"]

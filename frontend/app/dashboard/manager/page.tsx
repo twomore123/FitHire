@@ -81,28 +81,34 @@ export default async function ManagerJobsPage() {
       ) : (
         <div className="space-y-4 mb-6">
           {jobs.map((job) => (
-            <Card key={job.id}>
+            <Card key={job.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div className="flex gap-4 items-start">
-                    {job.brand_logo_url && (
-                      <div className="relative w-16 h-16 rounded-md overflow-hidden border border-zinc-200 flex-shrink-0">
+                  <div className="flex gap-4 items-start flex-1">
+                    {job.brand_logo_url ? (
+                      <div className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-zinc-200 shadow-md flex-shrink-0 bg-white">
                         <Image
                           src={job.brand_logo_url}
                           alt={`${job.title} logo`}
                           fill
-                          className="object-cover"
+                          className="object-contain p-2"
                         />
                       </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-300 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <span className="text-3xl font-bold text-slate-600">
+                          {job.title?.charAt(0) || "J"}
+                        </span>
+                      </div>
                     )}
-                    <div>
-                      <CardTitle>{job.title}</CardTitle>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="truncate">{job.title}</CardTitle>
                       <CardDescription>
                         {job.city}, {job.state} • {job.role_type}
                       </CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       job.is_active ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-700'
                     }`}>

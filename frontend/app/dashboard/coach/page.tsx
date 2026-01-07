@@ -62,28 +62,58 @@ export default async function CoachProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-start mb-8">
-        <div className="flex gap-6 items-start">
-          {existingCoach.profile_image_url && (
-            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
-              <Image
-                src={existingCoach.profile_image_url}
-                alt="Profile"
-                fill
-                className="object-cover"
-              />
+      {/* Hero Section with Profile Image */}
+      <div className="mb-8">
+        <div className="flex justify-between items-start">
+          <div className="flex gap-6 items-start flex-1">
+            <div className="relative">
+              {existingCoach.profile_image_url ? (
+                <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-primary shadow-2xl flex-shrink-0">
+                  <Image
+                    src={existingCoach.profile_image_url}
+                    alt="Profile"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-zinc-100 to-zinc-200 border-4 border-zinc-300 flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <span className="text-5xl text-zinc-400">👤</span>
+                </div>
+              )}
+              {isVerified && (
+                <div className="absolute -bottom-1 -right-1 w-10 h-10 bg-green-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                  <span className="text-white text-xl">✓</span>
+                </div>
+              )}
             </div>
-          )}
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Coach Profile</h1>
-            <p className="text-muted-foreground">
-              Manage your professional profile and certifications
-            </p>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-4xl font-bold">
+                  {user.firstName} {user.lastName}
+                </h1>
+              </div>
+              <p className="text-lg text-muted-foreground mb-3">
+                {existingCoach.city}, {existingCoach.state} • {existingCoach.years_experience} years experience
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full">
+                  <span className="text-sm font-medium text-blue-700">
+                    {completeness}% Complete
+                  </span>
+                </div>
+                {isVerified && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full">
+                    <span className="text-sm font-medium text-green-700">✓ Verified</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+          <Link href="/dashboard/coach/edit">
+            <Button size="lg">Edit Profile</Button>
+          </Link>
         </div>
-        <Link href="/dashboard/coach/edit">
-          <Button>Edit Profile</Button>
-        </Link>
       </div>
 
       <Card className="mb-6">

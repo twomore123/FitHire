@@ -56,12 +56,12 @@ export function CandidateList({ candidates }: CandidateListProps) {
   return (
     <div className="space-y-4">
       {candidates.map((candidate, index) => (
-        <Card key={candidate.coach_id}>
+        <Card key={candidate.coach_id} className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="flex justify-between items-start">
-              <div className="flex gap-4 items-start">
-                {candidate.profile_image_url && (
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-zinc-200 flex-shrink-0">
+              <div className="flex gap-4 items-start flex-1">
+                {candidate.profile_image_url ? (
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-primary/30 shadow-md flex-shrink-0">
                     <Image
                       src={candidate.profile_image_url}
                       alt={`${candidate.first_name} ${candidate.last_name}`}
@@ -69,26 +69,35 @@ export function CandidateList({ candidates }: CandidateListProps) {
                       className="object-cover"
                     />
                   </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-300 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <span className="text-3xl font-semibold text-blue-600">
+                      {candidate.first_name?.charAt(0) || "C"}{candidate.last_name?.charAt(0) || ""}
+                    </span>
+                  </div>
                 )}
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm font-medium text-muted-foreground">
                       #{index + 1}
                     </span>
-                    <CardTitle>
+                    <CardTitle className="truncate">
                       {candidate.first_name} {candidate.last_name}
                     </CardTitle>
                   </div>
-                  <CardDescription>
+                  <CardDescription className="mb-1">
                     {candidate.city}, {candidate.state} • {candidate.role_type}
                   </CardDescription>
+                  <div className="text-xs text-muted-foreground">
+                    {candidate.years_experience} {candidate.years_experience === 1 ? "year" : "years"} of experience
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-primary">
+              <div className="text-right flex-shrink-0 ml-4">
+                <div className="text-4xl font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
                   {Math.round(candidate.fitscore * 100)}
                 </div>
-                <div className="text-xs text-muted-foreground">FitScore</div>
+                <div className="text-xs text-muted-foreground font-medium">FitScore</div>
               </div>
             </div>
           </CardHeader>

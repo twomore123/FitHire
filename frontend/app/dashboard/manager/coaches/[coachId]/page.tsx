@@ -97,9 +97,10 @@ export default async function CoachProfilePage({
         </Button>
       </div>
 
+      {/* Coach Hero Section */}
       <div className="flex gap-6 items-start mb-6">
-        {coach.profile_image_url && (
-          <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
+        {coach.profile_image_url ? (
+          <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-primary shadow-2xl flex-shrink-0">
             <Image
               src={coach.profile_image_url}
               alt={`${coach.user?.first_name || "Coach"} profile picture`}
@@ -107,14 +108,27 @@ export default async function CoachProfilePage({
               className="object-cover"
             />
           </div>
+        ) : (
+          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-zinc-100 to-zinc-200 border-4 border-zinc-300 flex items-center justify-center flex-shrink-0 shadow-lg">
+            <span className="text-5xl text-zinc-400">👤</span>
+          </div>
         )}
-        <div>
+        <div className="flex-1">
           <h1 className="text-4xl font-bold mb-2">
             {coach.user?.first_name || "Coach"} {coach.user?.last_name || `#${coach.id}`}
           </h1>
-          <p className="text-muted-foreground">
-            {coach.city}, {coach.state}
+          <p className="text-lg text-muted-foreground mb-2">
+            {coach.city}, {coach.state} • {coach.years_experience} years experience
           </p>
+          {coach.user?.email && (
+            <a
+              href={`mailto:${coach.user.email}`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+            >
+              <span>Contact Coach</span>
+              <span>→</span>
+            </a>
+          )}
         </div>
       </div>
 

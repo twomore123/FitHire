@@ -44,27 +44,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Backend code quality improvements** (`backend/`)
   - Applied Black formatting to all Python files (17 files reformatted)
-  - Fixed all Ruff linting errors (29 auto-fixed)
+  - Fixed all Ruff linting errors (4 remaining issues resolved)
   - Moved router imports to top of main.py (fixes E402 linting errors)
   - Fixed exception handling in auth.py (proper exception chaining with `from e`)
   - All 30 pytest tests passing with 93% coverage on FitScore engine
-
-- **Frontend code quality improvements** (`frontend/`)
-  - Fixed critical React hooks issue in weighting-sliders.tsx (setState in effect)
-  - Removed unused imports (useState, CardDescription, ROLE_TYPES, TIME_SLOTS)
-  - Fixed apostrophe escaping in JSX (you&apos;re)
-  - TypeScript compilation successful
+  - ✅ Backend linting now passes completely
 
 - **Documentation updates**
   - Updated docs/changelog.md with v0.3.1 and v0.3.2 changes
   - Updated docs/architecture.md to v1.1 with FitScore edge cases and security fixes
   - Enhanced security section with ownership verification details
+  - Documented code quality improvements and remaining technical debt
 
 ### Technical Debt
-- **Remaining frontend linting issues:** 30 stylistic errors (non-blocking)
+- **Frontend linting issues:** 35 errors remaining (non-blocking)
+  - 1 React hooks error: setState in useEffect (components/ui/weighting-sliders.tsx)
   - 24 TypeScript `any` types (should define proper interfaces)
-  - 6 unescaped quotes in JSX (should use `&quot;` or `&apos;`)
-  - These do not affect functionality and can be addressed in future cleanup
+  - 5 unused imports/variables
+  - 5 unescaped quotes in JSX (should use `&quot;` or `&apos;`)
+  - These do not affect functionality; frontend builds successfully
+  - Can be addressed in future code cleanup pass
 
 ---
 

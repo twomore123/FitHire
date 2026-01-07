@@ -26,15 +26,27 @@ export default async function JobDetailPage({ params }: { params: { jobId: strin
 
   try {
     if (token) {
+      // Validate jobId is a valid number
+      if (isNaN(jobId)) {
+        console.error(`Invalid job ID: ${params.jobId} (parsed as ${jobId})`);
+        throw new Error("Invalid job ID");
+      }
+
+      console.log(`Fetching job ${jobId}...`);
+
       // Fetch job details
       job = await jobAPI.get(jobId, token);
+      console.log(`Job fetched successfully:`, job?.id, job?.title);
 
       // Fetch candidates for this job
+      console.log(`Fetching candidates for job ${jobId}...`);
       const candidatesData = await jobAPI.getCandidates(jobId, 20, token);
       candidates = candidatesData.candidates || [];
+      console.log(`Found ${candidates.length} candidates`);
     }
-  } catch (error) {
-    console.log("Error fetching job or candidates:", error);
+  } catch (error: any) {
+    console.error("Error fetching job or candidates:", error);
+    console.error("Error details:", error.message, error.status, error.details);
   }
 
   if (!job) {

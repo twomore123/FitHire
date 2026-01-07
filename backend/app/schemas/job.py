@@ -48,6 +48,10 @@ class JobCreate(BaseModel):
     compensation_min: Optional[Decimal] = Field(None, description="Minimum compensation")
     compensation_max: Optional[Decimal] = Field(None, description="Maximum compensation")
 
+    # Branding
+    brand_logo_url: Optional[str] = Field(None, description="URL to brand logo image")
+    brand_banner_url: Optional[str] = Field(None, description="URL to brand banner image")
+
     # FitScore configuration
     weighting_preset: str = Field(
         "balanced",
@@ -106,6 +110,9 @@ class JobUpdate(BaseModel):
     compensation_type: Optional[str] = None
     compensation_min: Optional[Decimal] = None
     compensation_max: Optional[Decimal] = None
+
+    brand_logo_url: Optional[str] = None
+    brand_banner_url: Optional[str] = None
 
     weighting_preset: Optional[str] = None
     custom_weights: Optional[Dict[str, float]] = None
@@ -171,8 +178,12 @@ class JobResponse(BaseModel):
 
     culture_tags: Optional[List[str]] = None
 
+    compensation_type: Optional[str] = None
     compensation_min: Optional[int] = None
     compensation_max: Optional[int] = None
+
+    brand_logo_url: Optional[str] = None
+    brand_banner_url: Optional[str] = None
 
     weighting_preset: str
     custom_weights: Optional[Dict[str, float]] = None

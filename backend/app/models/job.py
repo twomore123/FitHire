@@ -48,8 +48,13 @@ class Job(Base):
     fitscore_threshold = Column(Numeric(3, 2), default=0.60)  # 0.00 to 1.00
 
     # Compensation (optional, not used in scoring v1)
+    compensation_type = Column(String(50), nullable=True)  # 'hourly', 'salary', 'per_class'
     compensation_min = Column(Integer, nullable=True)
     compensation_max = Column(Integer, nullable=True)
+
+    # Branding
+    brand_logo_url = Column(String(500), nullable=True)
+    brand_banner_url = Column(String(500), nullable=True)
 
     # Status
     is_active = Column(Boolean, default=True, nullable=False, index=True)

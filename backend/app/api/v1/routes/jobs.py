@@ -149,21 +149,27 @@ async def get_job(
     """
     # Get the current user from database
     user = get_or_create_user(db, current_user)
+    logger.info(f"User {user.id} requesting job {job_id}")
 
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
+        logger.error(f"Job {job_id} not found in database")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job {job_id} not found"
         )
 
+    logger.info(f"Job {job_id} found, created_by={job.created_by}, requesting_user={user.id}")
+
     # Verify that this job belongs to the current user
     if job.created_by != user.id:
+        logger.error(f"User {user.id} does not own job {job_id} (owned by {job.created_by})")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to view this job listing"
         )
 
+    logger.info(f"Access granted to job {job_id}")
     return job
 
 
@@ -324,6 +330,8 @@ async def get_job_candidates(
     # Get all verified coaches in the same city (Phase 1: exact city match only)
     # Note: Coach model doesn't have status or role_type fields
     # verified_at is used to determine if coach is verified
+    logger.info(f"Looking for coaches in {job.city}, {job.state}")
+
     coaches = db.query(Coach).filter(
         and_(
             Coach.verified_at.isnot(None),  # Coach is verified if verified_at is set
@@ -331,6 +339,8 @@ async def get_job_candidates(
             Coach.state == job.state
         )
     ).all()
+
+    logger.info(f"Found {len(coaches)} verified coaches in {job.city}, {job.state}")
 
     # Calculate FitScore for each coach
     engine = FitScoreEngine()
@@ -348,6 +358,7 @@ async def get_job_candidates(
     }
 
     threshold = float(job.fitscore_threshold) if job.fitscore_threshold else 0.60
+    logger.info(f"FitScore threshold: {threshold}")
 
     for coach in coaches:
         coach_data = {
@@ -371,15 +382,22 @@ async def get_job_candidates(
             custom_weights=job.custom_weights
         )
 
+        logger.info(f"Coach {coach.id}: FitScore={score.fitscore:.2f}, Threshold={threshold}")
+
         # Only include if above threshold
         if score.fitscore >= threshold:
+            logger.info(f"Coach {coach.id} PASSES threshold")
             candidates.append({
                 "coach": coach,
                 "score": score
             })
+        else:
+            logger.info(f"Coach {coach.id} FAILS threshold")
 
     # Sort by FitScore descending
     candidates.sort(key=lambda x: x["score"].fitscore, reverse=True)
+
+    logger.info(f"Total candidates above threshold: {len(candidates)}")
 
     # Limit to top N candidates
     candidates = candidates[:limit]
@@ -401,6 +419,8 @@ async def get_job_candidates(
             ),
             rank=rank
         ))
+
+    logger.info(f"Returning {len(candidate_results)} candidates for job {job_id}")
 
     return JobCandidatesResponse(
         job_id=job_id,

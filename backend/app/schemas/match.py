@@ -1,6 +1,7 @@
 """Pydantic schemas for Match/FitScore endpoints"""
 
 from typing import List
+
 from pydantic import BaseModel, Field
 
 from app.schemas.coach import CoachResponse
@@ -9,6 +10,7 @@ from app.schemas.job import JobResponse
 
 class FitScoreBreakdown(BaseModel):
     """Detailed breakdown of FitScore components"""
+
     fitscore: float = Field(..., description="Overall FitScore (0.0 to 1.0)")
     cert_score: float = Field(..., description="Certifications match score")
     experience_score: float = Field(..., description="Experience match score")
@@ -20,6 +22,7 @@ class FitScoreBreakdown(BaseModel):
 
 class CoachMatchResult(BaseModel):
     """A job match for a coach"""
+
     job: JobResponse
     fitscore: float
     score_breakdown: FitScoreBreakdown
@@ -28,6 +31,7 @@ class CoachMatchResult(BaseModel):
 
 class CoachMatchesResponse(BaseModel):
     """Response with top job matches for a coach"""
+
     coach_id: int
     matches: List[CoachMatchResult]
     total_matches: int = Field(..., description="Total number of matches above threshold")
@@ -36,6 +40,7 @@ class CoachMatchesResponse(BaseModel):
 
 class JobCandidateResult(BaseModel):
     """A coach candidate for a job"""
+
     coach: CoachResponse
     fitscore: float
     score_breakdown: FitScoreBreakdown
@@ -44,6 +49,7 @@ class JobCandidateResult(BaseModel):
 
 class JobCandidatesResponse(BaseModel):
     """Response with top coach candidates for a job"""
+
     job_id: int
     candidates: List[JobCandidateResult]
     total_candidates: int = Field(..., description="Total number of candidates above threshold")

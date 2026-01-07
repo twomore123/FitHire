@@ -3,10 +3,10 @@ Database seeding script for FitHire
 Creates initial test data: Brand, Region, Location, and User
 """
 
-from app.db.session import SessionLocal, engine
-from app.models.brand import Brand, Region, Location
+from app.db.session import Base, SessionLocal, engine
+from app.models.brand import Brand, Location, Region
 from app.models.user import User
-from app.db.session import Base
+
 
 def seed_database():
     """Seed database with initial test data"""
@@ -29,20 +29,13 @@ def seed_database():
 
         if not existing_brand:
             # Create a test brand
-            brand = Brand(
-                name="FitHire Demo Gym",
-                slug="fithire-demo"
-            )
+            brand = Brand(name="FitHire Demo Gym", slug="fithire-demo")
             db.add(brand)
             db.flush()  # Get the brand ID
             brand_id = brand.id
 
             # Create a test region
-            region = Region(
-                brand_id=brand.id,
-                name="San Francisco Bay Area",
-                slug="sf-bay-area"
-            )
+            region = Region(brand_id=brand.id, name="San Francisco Bay Area", slug="sf-bay-area")
             db.add(region)
             db.flush()  # Get the region ID
 
@@ -54,11 +47,7 @@ def seed_database():
             ]
 
             for loc_data in locations_data:
-                location = Location(
-                    brand_id=brand.id,
-                    region_id=region.id,
-                    **loc_data
-                )
+                location = Location(brand_id=brand.id, region_id=region.id, **loc_data)
                 db.add(location)
 
             print(f"   Created Brand: {brand.name}")
@@ -76,7 +65,7 @@ def seed_database():
                 email="test@fithire.com",
                 first_name="Test",
                 last_name="User",
-                role="coach"
+                role="coach",
             )
             db.add(user)
             print(f"   Created Test User: {user.email}")

@@ -1,10 +1,9 @@
 """Authentication utilities for JWT validation with Clerk"""
 
-from typing import Optional
-from fastapi import HTTPException, status, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
 import httpx
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
 
 from app.config import settings
 
@@ -20,8 +19,8 @@ async def get_clerk_jwks():
     """
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            f"https://api.clerk.com/v1/jwks",
-            headers={"Authorization": f"Bearer {settings.clerk_secret_key}"}
+            "https://api.clerk.com/v1/jwks",
+            headers={"Authorization": f"Bearer {settings.clerk_secret_key}"},
         )
         response.raise_for_status()
         return response.json()
@@ -42,7 +41,7 @@ async def verify_jwt_token(token: str) -> dict:
     """
     try:
         # Decode without verification first to get the header
-        unverified_header = jwt.get_unverified_header(token)
+        jwt.get_unverified_header(token)
 
         # For now, we'll decode without verification
         # In production, you should fetch JWKS and verify the signature
@@ -50,7 +49,7 @@ async def verify_jwt_token(token: str) -> dict:
             token,
             settings.clerk_secret_key,
             algorithms=["RS256"],
-            options={"verify_signature": False}  # TODO: Implement proper JWKS verification
+            options={"verify_signature": False},  # TODO: Implement proper JWKS verification
         )
 
         return payload
@@ -63,9 +62,7 @@ async def verify_jwt_token(token: str) -> dict:
         )
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> dict:
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     """
     Dependency function to get the current authenticated user
 
@@ -95,6 +92,7 @@ def require_role(*allowed_roles: str):
     Returns:
         Dependency function that checks user role
     """
+
     async def role_checker(user: dict = Depends(get_current_user)) -> dict:
         user_role = user.get("role")
         if user_role not in allowed_roles:

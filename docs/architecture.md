@@ -1,7 +1,7 @@
 # FitHire System Architecture
 
-**Version:** 1.0
-**Last Updated:** 2025-12-30
+**Version:** 1.1
+**Last Updated:** 2026-01-07
 **Status:** Phase 1 - In Development
 
 ---
@@ -86,6 +86,8 @@ Match fitness coaches with job opportunities using a deterministic FitScore algo
 3. FitScore Engine calculates scores
    ├─> For each coach:
    │   ├─> Calculate 6 sub-scores (certs, exp, avail, loc, culture, engage)
+   │   │   ├─> Each component checks for "no requirements" edge case
+   │   │   └─> Returns 1.0 (perfect match) if no requirements exist
    │   ├─> Apply weighting preset
    │   └─> Return final FitScore (0.0 to 1.0)
    │
@@ -96,6 +98,19 @@ Match fitness coaches with job opportunities using a deterministic FitScore algo
 4. API returns match list with explanations
    └─> Frontend displays ranked candidates
 ```
+
+**FitScore Edge Case Handling (v1.1):**
+
+The FitScore algorithm includes special handling for jobs with minimal or no requirements:
+
+- **Certifications:** Returns 1.0 if no required or preferred certifications specified
+  - If no preferred certs exist, gives full bonus (0.3) instead of 0.0
+- **Experience:** Returns 1.0 if `min_experience = 0`
+  - Prevents penalizing coaches when no experience requirement exists
+- **Availability:** Returns 1.0 if no required time slots specified
+  - Jobs with flexible scheduling don't penalize any coach's availability
+
+**Rationale:** A job with no requirements in a category should not penalize candidates. This ensures fair scoring where lack of requirements = perfect match rather than zero match.
 
 ### File Upload Flow (Videos/Images)
 
@@ -529,14 +544,22 @@ Authorization: Bearer <clerk-jwt>
 ### Authentication & Authorization
 - JWT tokens validated on every API request
 - Role-based access control (RBAC) enforced in API
+- **Ownership verification:** All job and coach endpoints verify user ownership (403 if unauthorized)
 - Brand-level data isolation via `brand_id` filtering
 - Clerk handles password security (bcrypt, rate limiting)
+- **User record creation:** `get_or_create_user()` helper ensures authenticated users have database records
 
 ### Data Protection
 - All API requests over HTTPS only
 - Database connections use SSL/TLS (sslmode=require)
 - Sensitive env vars never committed to git
 - API secrets rotated regularly
+
+### Frontend Security
+- **Next.js caching:** All authenticated pages use `dynamic = 'force-dynamic'` and `revalidate = 0`
+- Prevents server-side cache from serving User A's data to User B
+- No client-side storage of sensitive data
+- Clerk session management handles token refresh
 
 ### File Upload Security
 - Presigned URLs expire after 1 hour
@@ -546,9 +569,15 @@ Authorization: Bearer <clerk-jwt>
 
 ### Multi-Tenancy Isolation
 - Every query filters by `brand_id`
+- **User-level isolation:** Job and coach endpoints filter by `created_by` user ID
 - SQLAlchemy row-level security
 - Users cannot access other brands' data
+- Users cannot modify other users' resources
 - Audit logs track all access
+
+### Security Fixes Applied
+- **v0.3.1 (2026-01-06):** Fixed cross-user data modification in job endpoints
+- **v0.3.1 (2026-01-06):** Fixed cross-user data leakage via Next.js caching
 
 ---
 

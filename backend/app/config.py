@@ -18,7 +18,9 @@ class Settings(BaseSettings):
     )
 
     # Application
-    environment: str = Field(default="development", description="Environment: development, staging, production")
+    environment: str = Field(
+        default="development", description="Environment: development, staging, production"
+    )
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8000, description="API port")
     api_reload: bool = Field(default=True, description="Enable auto-reload for development")
@@ -27,7 +29,7 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = Field(
         default="http://localhost:3000,http://127.0.0.1:3000",
-        description="Allowed CORS origins (comma-separated)"
+        description="Allowed CORS origins (comma-separated)",
     )
 
     # Database
@@ -50,7 +52,9 @@ class Settings(BaseSettings):
     r2_public_url: str = Field(default="", description="Public CDN URL for R2 bucket")
 
     # Redis (Phase 2)
-    redis_url: str = Field(default="redis://localhost:6379/0", description="Redis connection string")
+    redis_url: str = Field(
+        default="redis://localhost:6379/0", description="Redis connection string"
+    )
 
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")

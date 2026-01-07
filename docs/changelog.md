@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Custom weighting sliders for FitScore configuration
 - End-to-end testing
 
+### Completed - Phase 1 (Day 2-3) ✅
+- Critical security vulnerability fixes
+- FitScore algorithm edge case improvements
+- Next.js 15 compatibility updates
+- Data caching security improvements
+
 ### Completed - Phase 1 (Day 2) ✅
 - Frontend dashboards implemented (Coach, Manager, Admin)
 - Coach profile page displays real data with verification status
@@ -23,6 +29,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin verification queue with approve/reject actions
 - Clerk authentication integrated on frontend
 - Deployment to Railway (backend) and Vercel (frontend)
+
+---
+
+## [0.3.1] - 2026-01-06 (Security & Bug Fixes)
+
+### Security
+- **CRITICAL: Fixed cross-user data modification vulnerability in job endpoints** (`backend/app/api/v1/routes/jobs.py`)
+  - All jobs were being created with hardcoded `created_by=1`, allowing managers to view/edit/delete each other's job postings
+  - Added `get_or_create_user()` helper function to get authenticated user's database record
+  - All job endpoints now verify ownership and return 403 Forbidden for unauthorized access
+  - Endpoints secured: POST, GET, PATCH, DELETE, and candidates listing
+  - Complete data integrity restored for job management
+
+- **CRITICAL: Fixed cross-user data leakage via Next.js server-side caching** (`frontend/app/dashboard/*`)
+  - Server-side caching could serve User A's PII (names, locations, certifications, bios) to User B
+  - Added caching directives to all authenticated dashboard pages:
+    - `export const dynamic = 'force-dynamic'`
+    - `export const revalidate = 0`
+  - Pages secured: Coach profile, Coach edit, Manager jobs, Manager job detail, Admin verification
+
+### Fixed
+- **FitScore edge cases** (`backend/app/core/fitscore/engine.py:102-204`)
+  - Fixed unfair penalization when jobs have no requirements
+  - Certifications: Now returns 1.0 (perfect match) if no required/preferred certifications
+  - Experience: Now returns 1.0 if `min_experience = 0`
+  - Availability: Now returns 1.0 if no required time slots
+  - Also gives full bonus (0.3) when no preferred certifications exist
+
+- **Next.js 15 async params compatibility** (`frontend/app/dashboard/manager/[jobId]/*.tsx`)
+  - Updated job detail page to handle async params API changes
+  - Updated job edit page to handle async params API changes
+  - Ensures compatibility with Next.js 15
+
+- **Frontend data transformation** (`frontend/app/dashboard/manager/[jobId]/page.tsx`)
+  - Fixed candidate data to match CandidateList interface requirements
+  - Improved data mapping for proper component rendering
+
+- **Coach profile completeness calculation** (Previous fixes)
+  - Fixed completeness percentage display
+  - Added spreadsheet-style availability view
+
+- **Validation error handling** (Previous fixes)
+  - Removed User fields from Coach schemas to prevent 422 errors
+  - Added detailed validation error logging for debugging
+
+- **Thursday abbreviation bug** (Previous fixes)
+  - Fixed incorrect day abbreviation in availability component
+
+### Changed
+- Enhanced error logging throughout job endpoints for better debugging
+- Improved JWT parsing for user creation
+
+---
 
 ### Completed - Phase 1 (Day 1) ✅
 - All backend API endpoints implemented

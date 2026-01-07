@@ -1,7 +1,8 @@
 """Audit logging and match event tracking models"""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 

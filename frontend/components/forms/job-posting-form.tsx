@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -393,6 +394,58 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
               aspectRatio="wide"
             />
           </div>
+
+          {/* Preview Section */}
+          {(formData.brand_logo_url || formData.brand_banner_url) && (
+            <div className="border-t pt-6 space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Preview</h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  How your images will appear on the platform
+                </p>
+              </div>
+
+              {formData.brand_logo_url && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Job Card Preview</p>
+                  <Card className="max-w-md">
+                    <CardHeader>
+                      <div className="flex gap-4 items-start">
+                        <div className="relative w-16 h-16 rounded-md overflow-hidden border border-zinc-200 flex-shrink-0">
+                          <Image
+                            src={formData.brand_logo_url}
+                            alt="Logo preview"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
+                          <CardTitle>{formData.title || "Job Title"}</CardTitle>
+                          <CardDescription>
+                            {formData.city || "City"}, {formData.state || "ST"} • {formData.role_type || "Role Type"}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </div>
+              )}
+
+              {formData.brand_banner_url && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Job Detail Banner Preview</p>
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden border border-zinc-200">
+                    <Image
+                      src={formData.brand_banner_url}
+                      alt="Banner preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

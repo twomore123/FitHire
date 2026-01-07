@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FitScoreDisplay } from "@/components/fitscore/fitscore-display";
@@ -14,6 +15,7 @@ interface JobMatch {
   compensation_type?: string;
   compensation_min?: number;
   compensation_max?: number;
+  brand_logo_url?: string;
   fitscore: number;
   fitscore_breakdown: {
     certification_score: number;
@@ -56,16 +58,28 @@ export function JobMatchList({ matches }: JobMatchListProps) {
         <Card key={match.job_id}>
           <CardHeader>
             <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    #{index + 1}
-                  </span>
-                  <CardTitle>{match.title}</CardTitle>
+              <div className="flex gap-4 items-start">
+                {match.brand_logo_url && (
+                  <div className="relative w-16 h-16 rounded-md overflow-hidden border border-zinc-200 flex-shrink-0">
+                    <Image
+                      src={match.brand_logo_url}
+                      alt={`${match.title} logo`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      #{index + 1}
+                    </span>
+                    <CardTitle>{match.title}</CardTitle>
+                  </div>
+                  <CardDescription>
+                    {match.city}, {match.state} • {match.role_type}
+                  </CardDescription>
                 </div>
-                <CardDescription>
-                  {match.city}, {match.state} • {match.role_type}
-                </CardDescription>
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold text-primary">

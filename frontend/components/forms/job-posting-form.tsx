@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScheduleSelector } from "@/components/ui/schedule-selector";
 import { WeightingSliders, type CustomWeights } from "@/components/ui/weighting-sliders";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { jobAPI } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 
@@ -80,6 +81,8 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
     compensation_type: initialData?.compensation_type || "hourly",
     compensation_min: initialData?.compensation_min || "",
     compensation_max: initialData?.compensation_max || "",
+    brand_logo_url: initialData?.brand_logo_url || "",
+    brand_banner_url: initialData?.brand_banner_url || "",
     weighting_preset: initialData?.weighting_preset || "balanced",
     fitscore_threshold: initialData?.fitscore_threshold || 0.60,
     custom_weights: initialData?.custom_weights || null,
@@ -352,6 +355,43 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
                 placeholder="0.00"
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Brand Images */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Brand Images (Optional)</CardTitle>
+          <CardDescription>Upload your brand logo and banner</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Brand Logo</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Square logo shown on job cards (recommended: 200x200px)
+            </p>
+            <ImageUpload
+              value={formData.brand_logo_url}
+              onChange={(url) => setFormData({ ...formData, brand_logo_url: url })}
+              folder="brand-logos"
+              label="Brand Logo"
+              aspectRatio="square"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Brand Banner</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Wide banner shown on job detail pages (recommended: 1200x400px)
+            </p>
+            <ImageUpload
+              value={formData.brand_banner_url}
+              onChange={(url) => setFormData({ ...formData, brand_banner_url: url })}
+              folder="brand-banners"
+              label="Brand Banner"
+              aspectRatio="wide"
+            />
           </div>
         </CardContent>
       </Card>

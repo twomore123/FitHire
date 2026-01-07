@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CandidateList } from "@/components/matches/candidate-list";
@@ -102,12 +103,26 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
+      <div className="mb-4">
         <Link href="/dashboard/manager">
-          <Button variant="ghost" size="sm" className="mb-4">
+          <Button variant="ghost" size="sm">
             ← Back to Jobs
           </Button>
         </Link>
+      </div>
+
+      {job.brand_banner_url && (
+        <div className="relative w-full h-48 rounded-lg overflow-hidden mb-6">
+          <Image
+            src={job.brand_banner_url}
+            alt={`${job.title} banner`}
+            fill
+            className="object-cover"
+          />
+        </div>
+      )}
+
+      <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-4xl font-bold mb-2">{job.title}</h1>

@@ -44,6 +44,7 @@ export default async function CoachMatchesPage() {
           compensation_type: match.job.compensation_type,
           compensation_min: match.job.compensation_min,
           compensation_max: match.job.compensation_max,
+          brand_logo_url: match.job.brand_logo_url,
           fitscore: match.fitscore,
           fitscore_breakdown: {
             certification_score: match.score_breakdown?.cert_score || 0,

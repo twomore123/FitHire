@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -83,11 +84,23 @@ export default async function ManagerJobsPage() {
             <Card key={job.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{job.title}</CardTitle>
-                    <CardDescription>
-                      {job.city}, {job.state} • {job.role_type}
-                    </CardDescription>
+                  <div className="flex gap-4 items-start">
+                    {job.brand_logo_url && (
+                      <div className="relative w-16 h-16 rounded-md overflow-hidden border border-zinc-200 flex-shrink-0">
+                        <Image
+                          src={job.brand_logo_url}
+                          alt={`${job.title} logo`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <CardTitle>{job.title}</CardTitle>
+                      <CardDescription>
+                        {job.city}, {job.state} • {job.role_type}
+                      </CardDescription>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${

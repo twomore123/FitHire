@@ -58,7 +58,7 @@ class CoachCreate(BaseModel):
     )
 
     # Media
-    profile_photo_url: Optional[HttpUrl] = None
+    profile_image_url: Optional[HttpUrl] = None
     verified_video_url: Optional[HttpUrl] = None
 
     # Bio
@@ -79,7 +79,7 @@ class CoachUpdate(BaseModel):
     movement_tags: Optional[List[str]] = None
     instruction_tags: Optional[List[str]] = None
 
-    profile_photo_url: Optional[HttpUrl] = None
+    profile_image_url: Optional[HttpUrl] = None
     verified_video_url: Optional[HttpUrl] = None
 
     bio: Optional[str] = Field(None, max_length=2000)

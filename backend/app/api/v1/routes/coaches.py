@@ -217,7 +217,7 @@ async def create_coach(
         existing_coach.lifestyle_tags = coach_data.lifestyle_tags
         existing_coach.movement_tags = coach_data.movement_tags
         existing_coach.instruction_tags = coach_data.instruction_tags
-        existing_coach.profile_image_url = str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None
+        existing_coach.profile_image_url = str(coach_data.profile_image_url) if coach_data.profile_image_url else None
         existing_coach.verified_video_url = str(coach_data.verified_video_url) if coach_data.verified_video_url else None
         existing_coach.profile_completeness = calculate_profile_completeness(coach_data.model_dump())
         existing_coach.last_updated = datetime.now()
@@ -243,7 +243,7 @@ async def create_coach(
         lifestyle_tags=coach_data.lifestyle_tags,
         movement_tags=coach_data.movement_tags,
         instruction_tags=coach_data.instruction_tags,
-        profile_image_url=str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None,
+        profile_image_url=str(coach_data.profile_image_url) if coach_data.profile_image_url else None,
         verified_video_url=str(coach_data.verified_video_url) if coach_data.verified_video_url else None,
         profile_completeness=completeness,
         last_updated=datetime.now(),
@@ -373,15 +373,7 @@ async def update_coach(
     # Update fields if provided (only fields that exist in Coach model)
     update_data = coach_update.model_dump(exclude_unset=True)
 
-    # Map frontend field names to Coach model field names
-    field_mapping = {
-        "profile_photo_url": "profile_image_url",  # Frontend uses profile_photo_url, model uses profile_image_url
-    }
-
     for field, value in update_data.items():
-        # Map field names
-        model_field = field_mapping.get(field, field)
-
         if field == "certifications" and value is not None:
             # Handle both Pydantic models and plain dicts from frontend
             certs = []
@@ -390,12 +382,12 @@ async def update_coach(
                     certs.append(cert)  # Already a dict
                 else:
                     certs.append(cert.model_dump())  # Pydantic model
-            setattr(coach, model_field, certs)
-        elif field in ["profile_photo_url", "verified_video_url"] and value is not None:
+            setattr(coach, field, certs)
+        elif field in ["profile_image_url", "verified_video_url"] and value is not None:
             # Convert HttpUrl to string
-            setattr(coach, model_field, str(value) if value else None)
+            setattr(coach, field, str(value) if value else None)
         else:
-            setattr(coach, model_field, value)
+            setattr(coach, field, value)
 
     # Recalculate profile completeness (only using fields that exist in Coach model)
     coach_dict = {

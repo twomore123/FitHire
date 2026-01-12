@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frontend TypeScript type improvements (30 remaining stylistic `any` types)
 
 ### Completed - Phase 1 (Day 3) ✅
+- Critical production bug fix: matches page crash
 - Code quality improvements and linting fixes
 - Backend code formatting and lint compliance
 - Critical React hooks fixes
@@ -36,6 +37,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin verification queue with approve/reject actions
 - Clerk authentication integrated on frontend
 - Deployment to Railway (backend) and Vercel (frontend)
+
+---
+
+## [0.3.3] - 2026-01-07 (Hotfix - Matches Page Crash)
+
+### Fixed
+- **CRITICAL: Fixed matches page crash** (`frontend/components/fitscore/fitscore-display.tsx`)
+  - Added null/undefined check for `breakdown` prop before calling `Object.entries()`
+  - Error: "Uncaught TypeError: Cannot convert undefined or null to object"
+  - Made `breakdown` prop optional in FitScoreDisplayProps interface
+  - Updated FitScoreCard to only show details when breakdown exists
+  - Prevents crash when API returns matches without fitscore_breakdown data
+  - Affects both coach matches page and manager candidates page
+
+### Impact
+- Users can now view matches page without crashes
+- FitScore still displays overall score even if breakdown is missing
+- Graceful degradation when detailed score breakdown unavailable
 
 ---
 

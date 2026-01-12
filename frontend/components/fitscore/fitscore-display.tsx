@@ -11,7 +11,7 @@ interface FitScoreBreakdown {
 
 interface FitScoreDisplayProps {
   totalScore: number;
-  breakdown: FitScoreBreakdown;
+  breakdown?: FitScoreBreakdown | null;
   showDetails?: boolean;
 }
 
@@ -114,7 +114,7 @@ export function FitScoreDisplay({ totalScore, breakdown, showDetails = true }: F
       </div>
 
       {/* Detailed Breakdown */}
-      {showDetails && (
+      {showDetails && breakdown && (
         <div className="space-y-3">
           <div className="text-sm font-semibold">Score Breakdown</div>
           {Object.entries(breakdown).map(([key, value]) => {
@@ -159,7 +159,7 @@ export function FitScoreCard({ totalScore, breakdown }: Omit<FitScoreDisplayProp
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <FitScoreDisplay totalScore={totalScore} breakdown={breakdown} showDetails={true} />
+        <FitScoreDisplay totalScore={totalScore} breakdown={breakdown} showDetails={!!breakdown} />
       </CardContent>
     </Card>
   );

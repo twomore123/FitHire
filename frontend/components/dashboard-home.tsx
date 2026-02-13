@@ -1,16 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function DashboardHome({ firstName }: { firstName: string | null }) {
   const [role, setRole] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    setRole(localStorage.getItem("fithire_role"));
-  }, []);
+    const savedRole = localStorage.getItem("fithire_role");
+    if (savedRole === "coach") {
+      router.replace("/dashboard/coach");
+      return;
+    }
+    if (savedRole === "manager") {
+      router.replace("/dashboard/manager");
+      return;
+    }
+    setRole(savedRole);
+  }, [router]);
 
   return (
     <div className="max-w-4xl mx-auto">

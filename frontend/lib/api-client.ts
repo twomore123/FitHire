@@ -143,6 +143,14 @@ export const jobAPI = {
   },
 };
 
+// User API
+export const userAPI = {
+  async getMe(token: string) {
+    const response = await fetchWithAuth("/api/v1/users/me", {}, token);
+    return response.json();
+  },
+};
+
 // Admin API
 export const adminAPI = {
   async getVerificationQueue(token: string) {

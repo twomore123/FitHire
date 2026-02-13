@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CoachProfileForm } from "@/components/forms/coach-profile-form";
 import { auth } from "@clerk/nextjs/server";
 import { coachAPI } from "@/lib/api-client";
+import { getCurrentUserProfile } from "@/lib/user";
 
 // Disable caching for this page - each user should see their own data
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,11 @@ export default async function CoachEditPage() {
 
   if (!user) {
     redirect("/sign-in");
+  }
+
+  const userProfile = await getCurrentUserProfile();
+  if (userProfile && userProfile.role !== "coach") {
+    redirect("/dashboard");
   }
 
   const token = await getToken();

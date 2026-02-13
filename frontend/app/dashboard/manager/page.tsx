@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { jobAPI } from "@/lib/api-client";
+import { getCurrentUserProfile } from "@/lib/user";
 
 // Disable caching for this page - each user should see their own data
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,11 @@ export default async function ManagerJobsPage() {
 
   if (!user) {
     redirect("/sign-in");
+  }
+
+  const userProfile = await getCurrentUserProfile();
+  if (userProfile && userProfile.role !== "location_manager") {
+    redirect("/dashboard");
   }
 
   const token = await getToken();

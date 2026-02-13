@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { JobMatchList } from "@/components/matches/job-match-list";
 import { coachAPI } from "@/lib/api-client";
+import { getCurrentUserProfile } from "@/lib/user";
 
 // Disable caching for this page - each user should see their own data
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,11 @@ export default async function CoachMatchesPage() {
 
   if (!user) {
     redirect("/sign-in");
+  }
+
+  const userProfile = await getCurrentUserProfile();
+  if (userProfile && userProfile.role !== "coach") {
+    redirect("/dashboard");
   }
 
   const token = await getToken();

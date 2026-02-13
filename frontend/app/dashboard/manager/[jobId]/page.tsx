@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CandidateList } from "@/components/matches/candidate-list";
 import { jobAPI } from "@/lib/api-client";
+import { getCurrentUserProfile } from "@/lib/user";
 
 // Disable caching for this page - each user should see their own data
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,11 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
 
   if (!user) {
     redirect("/sign-in");
+  }
+
+  const userProfile = await getCurrentUserProfile();
+  if (userProfile && userProfile.role !== "location_manager") {
+    redirect("/dashboard");
   }
 
   // Await params if it's a Promise (Next.js 15+)

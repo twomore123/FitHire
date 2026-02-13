@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { JobPostingForm } from "@/components/forms/job-posting-form";
 import { auth } from "@clerk/nextjs/server";
 import { jobAPI } from "@/lib/api-client";
+import { getCurrentUserProfile } from "@/lib/user";
 
 // Disable caching for this page - each user should see their own data
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,11 @@ export default async function JobEditPage({ params }: { params: Promise<{ jobId:
 
   if (!user) {
     redirect("/sign-in");
+  }
+
+  const userProfile = await getCurrentUserProfile();
+  if (userProfile && userProfile.role !== "location_manager") {
+    redirect("/dashboard");
   }
 
   // Await params if it's a Promise (Next.js 15+)

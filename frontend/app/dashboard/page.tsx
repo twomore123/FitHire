@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getCurrentUserProfile } from "@/lib/user";
 
 // Disable caching for this page - each user should see their own data
 export const dynamic = 'force-dynamic';
@@ -15,74 +16,58 @@ export default async function DashboardPage() {
     redirect("/sign-in");
   }
 
+  const userProfile = await getCurrentUserProfile();
+  const role = userProfile?.role;
+
+  // If user already has a role, redirect them straight to their section
+  if (role === "coach") {
+    redirect("/dashboard/coach");
+  }
+  if (role === "location_manager") {
+    redirect("/dashboard/manager");
+  }
+
+  // No role yet — show role selection for new users
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">
-          Welcome back, {user.firstName || "there"}!
+          Welcome, {user.firstName || "there"}!
         </h1>
         <p className="text-muted-foreground">
-          What would you like to do today?
+          How would you like to use FitHire?
         </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Coach Profile</CardTitle>
+            <CardTitle>I&apos;m a Coach</CardTitle>
             <CardDescription>
-              Manage your professional profile and view job matches
+              Create your professional profile and get matched with jobs
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             <Link href="/dashboard/coach">
-              <Button className="w-full">View Profile</Button>
-            </Link>
-            <Link href="/dashboard/coach/matches">
-              <Button variant="outline" className="w-full">View My Matches</Button>
+              <Button className="w-full">Set Up Coach Profile</Button>
             </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Hiring Manager</CardTitle>
+            <CardTitle>I&apos;m a Hiring Manager</CardTitle>
             <CardDescription>
-              Post jobs and review coach candidates
+              Post jobs and find qualified coach candidates
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             <Link href="/dashboard/manager">
-              <Button className="w-full">View Jobs</Button>
-            </Link>
-            <Link href="/dashboard/manager/new">
-              <Button variant="outline" className="w-full">Post New Job</Button>
+              <Button className="w-full">Post a Job</Button>
             </Link>
           </CardContent>
         </Card>
       </div>
-
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Quick Stats</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-3xl font-bold">0</div>
-              <div className="text-sm text-muted-foreground">Profile Views</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold">0</div>
-              <div className="text-sm text-muted-foreground">Job Matches</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold">0%</div>
-              <div className="text-sm text-muted-foreground">Profile Complete</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

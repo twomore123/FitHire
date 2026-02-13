@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { coachAPI } from "@/lib/api-client";
 import { ScheduleDisplay } from "@/components/ui/schedule-display";
+import { getCurrentUserProfile } from "@/lib/user";
 
 // Disable caching for this page - each user should see their own data
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,11 @@ export default async function CoachProfilePage() {
 
   if (!user) {
     redirect("/sign-in");
+  }
+
+  const userProfile = await getCurrentUserProfile();
+  if (userProfile && userProfile.role !== "coach") {
+    redirect("/dashboard");
   }
 
   const token = await getToken();

@@ -25,7 +25,7 @@ export function DashboardHome({ firstName }: { firstName: string | null }) {
 
       <div className="grid md:grid-cols-2 gap-6">
         {role !== "manager" && (
-          <Card>
+          <Card className={role === "coach" ? "md:col-span-2" : ""}>
             <CardHeader>
               <CardTitle>Coach Profile</CardTitle>
               <CardDescription>
@@ -44,7 +44,7 @@ export function DashboardHome({ firstName }: { firstName: string | null }) {
         )}
 
         {role !== "coach" && (
-          <Card>
+          <Card className={role === "manager" ? "md:col-span-2" : ""}>
             <CardHeader>
               <CardTitle>Hiring Manager</CardTitle>
               <CardDescription>

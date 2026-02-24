@@ -65,7 +65,7 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
                 first_name=current_user.get("given_name") or current_user.get("first_name"),
                 last_name=current_user.get("family_name") or current_user.get("last_name"),
                 role="coach",  # Default role for new users
-                brand_id=1,  # Default brand for Phase 1
+                # brand_id intentionally omitted - nullable, assigned later via coach/location
             )
             db.add(user)
             db.commit()
@@ -78,6 +78,7 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
     except Exception as e:
         logger.error(f"Error in get_or_create_user: {str(e)}")
         logger.error(f"JWT payload: {current_user}")
+        db.rollback()
         raise
 
 
@@ -199,35 +200,6 @@ async def create_coach(
     return new_coach
 
 
-@router.get("/{coach_id}", response_model=CoachResponse)
-async def get_coach(
-    coach_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
-):
-    """
-    Get a single coach profile by ID
-
-    Requires authentication. Users can only view their own coach profiles.
-    """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
-    coach = db.query(Coach).filter(Coach.id == coach_id).first()
-    if not coach:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Coach {coach_id} not found"
-        )
-
-    # Verify that this coach belongs to the current user
-    # (Managers and admins viewing candidates will use the matches endpoint)
-    if coach.user_id != user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to view this coach profile",
-        )
-
-    return coach
-
-
 @router.get("/", response_model=CoachListResponse)
 async def list_coaches(
     page: int = Query(1, ge=1, description="Page number"),
@@ -270,6 +242,35 @@ async def list_coaches(
         page_size=page_size,
         total_pages=(total + page_size - 1) // page_size,
     )
+
+
+@router.get("/{coach_id}", response_model=CoachResponse)
+async def get_coach(
+    coach_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
+):
+    """
+    Get a single coach profile by ID
+
+    Requires authentication. Users can only view their own coach profiles.
+    """
+    # Get the current user from database
+    user = get_or_create_user(db, current_user)
+
+    coach = db.query(Coach).filter(Coach.id == coach_id).first()
+    if not coach:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Coach {coach_id} not found"
+        )
+
+    # Verify that this coach belongs to the current user
+    # (Managers and admins viewing candidates will use the matches endpoint)
+    if coach.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this coach profile",
+        )
+
+    return coach
 
 
 @router.patch("/{coach_id}", response_model=CoachResponse)

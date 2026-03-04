@@ -16,76 +16,17 @@ from app.models.job import Job
 from app.models.user import User
 from app.schemas.job import JobCreate, JobListResponse, JobResponse, JobUpdate
 from app.schemas.match import FitScoreBreakdown, JobCandidateResult, JobCandidatesResponse
-from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user_db
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 logger = logging.getLogger(__name__)
-
-
-def get_or_create_user(db: Session, current_user: dict) -> User:
-    """
-    Get or create a User record from Clerk authentication
-
-    Args:
-        db: Database session
-        current_user: Decoded JWT payload from Clerk
-
-    Returns:
-        User: The user record
-    """
-    try:
-        clerk_user_id = current_user.get("sub")
-        logger.info(f"JWT payload keys: {list(current_user.keys())}")
-        logger.info(f"Clerk user ID: {clerk_user_id}")
-
-        if not clerk_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token: missing user ID",
-            )
-
-        # Try to find existing user
-        user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
-
-        if not user:
-            # Create new user record
-            # Extract email from JWT - Clerk uses different field names
-            email = (
-                current_user.get("email")
-                or current_user.get("email_address")
-                or current_user.get("primary_email")
-                or f"{clerk_user_id}@clerk.user"
-            )
-
-            logger.info(f"Creating new user with email: {email}")
-
-            user = User(
-                clerk_user_id=clerk_user_id,
-                email=email,
-                first_name=current_user.get("given_name") or current_user.get("first_name"),
-                last_name=current_user.get("family_name") or current_user.get("last_name"),
-                role="location_manager",  # Default role for job creators
-                brand_id=1,  # Default brand for Phase 1
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-            logger.info(f"Created user with ID: {user.id}")
-        else:
-            logger.info(f"Found existing user with ID: {user.id}")
-
-        return user
-    except Exception as e:
-        logger.error(f"Error in get_or_create_user: {str(e)}")
-        logger.error(f"JWT payload: {current_user}")
-        raise
 
 
 @router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
 async def create_job(
     job_data: JobCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user_db),
 ):
     """
     Create a new job listing
@@ -101,9 +42,6 @@ async def create_job(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Location {job_data.location_id} not found",
         )
-
-    # Get or create user from Clerk authentication
-    user = get_or_create_user(db, current_user)
 
     logger.info(f"Job being created by user ID: {user.id}")
 
@@ -139,15 +77,13 @@ async def create_job(
 
 @router.get("/{job_id}", response_model=JobResponse)
 async def get_job(
-    job_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
+    job_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user_db)
 ):
     """
     Get a single job listing by ID
 
     Requires authentication. Users can only view their own jobs.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
     logger.info(f"User {user.id} requesting job {job_id}")
 
     job = db.query(Job).filter(Job.id == job_id).first()
@@ -177,16 +113,13 @@ async def list_jobs(
     role_type: Optional[str] = Query(None, description="Filter by role type"),
     status: Optional[str] = Query(None, description="Filter by status"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user_db),
 ):
     """
     List jobs with pagination and filtering
 
     Requires authentication. Users see only their own job listings.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
     # Start with query filtered by current user
     query = db.query(Job).filter(Job.created_by == user.id)
 
@@ -219,16 +152,13 @@ async def update_job(
     job_id: int,
     job_update: JobUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user_db),
 ):
     """
     Update a job listing
 
     Requires authentication. Users can only update their own jobs.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job {job_id} not found")
@@ -257,16 +187,13 @@ async def update_job(
 
 @router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_job(
-    job_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
+    job_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user_db)
 ):
     """
     Delete a job listing
 
     Requires authentication. Users can only delete their own jobs.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job {job_id} not found")
@@ -289,7 +216,7 @@ async def get_job_candidates(
     job_id: int,
     limit: int = Query(20, ge=1, le=20, description="Maximum number of candidates to return"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user_db),
 ):
     """
     Get top coach candidates for a job
@@ -297,9 +224,6 @@ async def get_job_candidates(
     Returns coaches ranked by FitScore, filtered by the job's threshold.
     Only returns coaches with status='verified'.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
     # Get job and verify ownership
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:

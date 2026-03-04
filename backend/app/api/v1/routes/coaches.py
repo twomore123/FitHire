@@ -16,69 +16,10 @@ from app.models.job import Job
 from app.models.user import User
 from app.schemas.coach import CoachCreate, CoachListResponse, CoachResponse, CoachUpdate
 from app.schemas.match import CoachMatchesResponse, CoachMatchResult, FitScoreBreakdown
-from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user_db
 
 router = APIRouter(prefix="/coaches", tags=["coaches"])
 logger = logging.getLogger(__name__)
-
-
-def get_or_create_user(db: Session, current_user: dict) -> User:
-    """
-    Get or create a User record from Clerk authentication
-
-    Args:
-        db: Database session
-        current_user: Decoded JWT payload from Clerk
-
-    Returns:
-        User: The user record
-    """
-    try:
-        clerk_user_id = current_user.get("sub")
-        logger.info(f"JWT payload keys: {list(current_user.keys())}")
-        logger.info(f"Clerk user ID: {clerk_user_id}")
-
-        if not clerk_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token: missing user ID",
-            )
-
-        # Try to find existing user
-        user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
-
-        if not user:
-            # Create new user record
-            # Extract email from JWT - Clerk uses different field names
-            email = (
-                current_user.get("email")
-                or current_user.get("email_address")
-                or current_user.get("primary_email")
-                or f"{clerk_user_id}@clerk.user"
-            )
-
-            logger.info(f"Creating new user with email: {email}")
-
-            user = User(
-                clerk_user_id=clerk_user_id,
-                email=email,
-                first_name=current_user.get("given_name") or current_user.get("first_name"),
-                last_name=current_user.get("family_name") or current_user.get("last_name"),
-                role="coach",  # Default role for new users
-                brand_id=1,  # Default brand for Phase 1
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-            logger.info(f"Created user with ID: {user.id}")
-        else:
-            logger.info(f"Found existing user with ID: {user.id}")
-
-        return user
-    except Exception as e:
-        logger.error(f"Error in get_or_create_user: {str(e)}")
-        logger.error(f"JWT payload: {current_user}")
-        raise
 
 
 def calculate_profile_completeness(coach_data: dict) -> float:
@@ -117,7 +58,7 @@ def calculate_profile_completeness(coach_data: dict) -> float:
 async def create_coach(
     coach_data: CoachCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user_db),
 ):
     """
     Create a new coach profile
@@ -131,9 +72,6 @@ async def create_coach(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Location {coach_data.location_id} not found",
         )
-
-    # Get or create user from Clerk authentication
-    user = get_or_create_user(db, current_user)
 
     # Check if coach already exists for this user
     existing_coach = db.query(Coach).filter(Coach.user_id == user.id).first()
@@ -201,16 +139,13 @@ async def create_coach(
 
 @router.get("/{coach_id}", response_model=CoachResponse)
 async def get_coach(
-    coach_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
+    coach_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user_db)
 ):
     """
     Get a single coach profile by ID
 
     Requires authentication. Users can only view their own coach profiles.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
@@ -236,16 +171,13 @@ async def list_coaches(
     role_type: Optional[str] = Query(None, description="Filter by role type"),
     status: Optional[str] = Query(None, description="Filter by status"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user_db),
 ):
     """
     List coaches with pagination and filtering
 
     Requires authentication. Users see only their own coach profiles.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
     # Start with query filtered by current user
     query = db.query(Coach).filter(Coach.user_id == user.id)
 
@@ -277,16 +209,13 @@ async def update_coach(
     coach_id: int,
     coach_update: CoachUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user_db),
 ):
     """
     Update a coach profile
 
     Requires authentication. Users can only update their own coach profiles.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
     # Fetch the coach and verify ownership
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
@@ -357,7 +286,7 @@ async def get_coach_matches(
     coach_id: int,
     limit: int = Query(20, ge=1, le=20, description="Maximum number of matches to return"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user_db),
 ):
     """
     Get top job matches for a coach
@@ -365,9 +294,6 @@ async def get_coach_matches(
     Returns jobs ranked by FitScore, filtered by the job's threshold.
     Only returns jobs with status='open'.
     """
-    # Get the current user from database
-    user = get_or_create_user(db, current_user)
-
     # Get coach and verify ownership
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:

@@ -1,11 +1,18 @@
 """Authentication utilities for JWT validation with Clerk"""
 
+import logging
+
 import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.db.session import get_db
+from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
 
@@ -77,6 +84,61 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     """
     token = credentials.credentials
     return await verify_jwt_token(token)
+
+
+def get_current_user_db(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> User:
+    """
+    FastAPI dependency that resolves the current authenticated user
+    to a database User record. Creates the record if it doesn't exist.
+
+    Args:
+        db: Database session (injected by FastAPI)
+        current_user: Decoded JWT payload from Clerk (injected by FastAPI)
+
+    Returns:
+        User: The database user record
+    """
+    clerk_user_id = current_user.get("sub")
+    logger.info(f"JWT payload keys: {list(current_user.keys())}")
+    logger.info(f"Clerk user ID: {clerk_user_id}")
+
+    if not clerk_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token: missing user ID",
+        )
+
+    user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
+
+    if not user:
+        email = (
+            current_user.get("email")
+            or current_user.get("email_address")
+            or current_user.get("primary_email")
+            or f"{clerk_user_id}@clerk.user"
+        )
+
+        logger.info(f"Creating new user with email: {email}")
+
+        user = User(
+            clerk_user_id=clerk_user_id,
+            email=email,
+            first_name=current_user.get("given_name") or current_user.get("first_name"),
+            last_name=current_user.get("family_name") or current_user.get("last_name"),
+            role="coach",
+            brand_id=1,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        logger.info(f"Created user with ID: {user.id}")
+    else:
+        logger.info(f"Found existing user with ID: {user.id}")
+
+    return user
 
 
 def require_role(*allowed_roles: str):

@@ -65,7 +65,7 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
                 first_name=current_user.get("given_name") or current_user.get("first_name"),
                 last_name=current_user.get("family_name") or current_user.get("last_name"),
                 role="location_manager",  # Default role for job creators
-                brand_id=1,  # Default brand for Phase 1
+                # brand_id intentionally omitted - nullable, assigned later via job/location
             )
             db.add(user)
             db.commit()
@@ -78,6 +78,7 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
     except Exception as e:
         logger.error(f"Error in get_or_create_user: {str(e)}")
         logger.error(f"JWT payload: {current_user}")
+        db.rollback()
         raise
 
 

@@ -53,9 +53,11 @@ function prioritiesToWeights(priorities: Priorities): CustomWeights {
     (sum, p) => sum + PRIORITY_UNITS[p],
     0
   );
-  return Object.fromEntries(
-    WEIGHT_CRITERIA.map(({ key }) => [key, PRIORITY_UNITS[priorities[key]] / totalUnits])
-  ) as CustomWeights;
+  const weights: Partial<CustomWeights> = {};
+  for (const { key } of WEIGHT_CRITERIA) {
+    weights[key] = PRIORITY_UNITS[priorities[key]] / totalUnits;
+  }
+  return weights as CustomWeights;
 }
 
 const DEFAULT_PRIORITIES: Priorities = {

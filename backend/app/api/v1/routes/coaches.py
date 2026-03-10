@@ -201,7 +201,7 @@ async def create_coach(
         )
 
     # Get or create user from Clerk authentication
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     # Check if coach already exists for this user
     existing_coach = db.query(Coach).filter(Coach.user_id == user.id).first()

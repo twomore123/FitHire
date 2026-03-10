@@ -136,12 +136,6 @@ export function WeightingSliders({ onChange }: WeightingSlidersProps) {
           );
         })}
 
-        <div className="pt-4 border-t border-zinc-200 flex justify-between items-center">
-          <p className="text-xs text-muted-foreground">
-            Weights are calculated from priorities and always sum to 100%
-          </p>
-          <span className="text-sm font-bold text-green-600">Total: 100%</span>
-        </div>
       </CardContent>
     </Card>
   );

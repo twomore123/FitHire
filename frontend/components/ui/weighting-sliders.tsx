@@ -108,7 +108,6 @@ export function WeightingSliders({ onChange }: WeightingSlidersProps) {
       <CardContent className="space-y-4">
         {WEIGHT_CRITERIA.map(({ key, label, description }) => {
           const current = priorities[key];
-          const pct = Math.round(weights[key] * 100);
 
           return (
             <div key={key} className="flex items-center gap-4">
@@ -123,7 +122,7 @@ export function WeightingSliders({ onChange }: WeightingSlidersProps) {
                     key={p}
                     type="button"
                     onClick={() => handlePriorityChange(key, p)}
-                    className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    className={`px-6 py-1.5 text-sm font-medium transition-colors ${
                       current === p
                         ? "bg-primary text-white"
                         : "bg-white text-zinc-600 hover:bg-zinc-50"
@@ -133,10 +132,6 @@ export function WeightingSliders({ onChange }: WeightingSlidersProps) {
                   </button>
                 ))}
               </div>
-
-              <span className="text-sm font-semibold text-zinc-500 w-10 text-right shrink-0">
-                {pct}%
-              </span>
             </div>
           );
         })}

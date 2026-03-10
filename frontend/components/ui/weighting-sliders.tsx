@@ -13,90 +13,76 @@ export interface CustomWeights {
   engagement: number;
 }
 
+type Priority = "low" | "medium" | "high";
+type Priorities = Record<keyof CustomWeights, Priority>;
+
 interface WeightingSlidersProps {
   value: CustomWeights;
   onChange: (weights: CustomWeights) => void;
 }
 
-const WEIGHT_CRITERIA = [
-  {
-    key: "certifications" as keyof CustomWeights,
-    label: "Certifications",
-    description: "Required and preferred certifications match",
-  },
-  {
-    key: "experience" as keyof CustomWeights,
-    label: "Experience",
-    description: "Years of coaching experience",
-  },
-  {
-    key: "availability" as keyof CustomWeights,
-    label: "Availability",
-    description: "Schedule match and flexibility",
-  },
-  {
-    key: "location" as keyof CustomWeights,
-    label: "Location",
-    description: "Geographic proximity to job",
-  },
-  {
-    key: "cultural_fit" as keyof CustomWeights,
-    label: "Cultural Fit",
-    description: "Coaching style and values alignment",
-  },
-  {
-    key: "engagement" as keyof CustomWeights,
-    label: "Engagement",
-    description: "Profile completeness and activity",
-  },
+const WEIGHT_CRITERIA: {
+  key: keyof CustomWeights;
+  label: string;
+  description: string;
+}[] = [
+  { key: "certifications", label: "Certifications", description: "Required and preferred certifications match" },
+  { key: "experience", label: "Experience", description: "Years of coaching experience" },
+  { key: "availability", label: "Availability", description: "Schedule match and flexibility" },
+  { key: "location", label: "Location", description: "Geographic proximity to job" },
+  { key: "cultural_fit", label: "Cultural Fit", description: "Coaching style and values alignment" },
+  { key: "engagement", label: "Engagement", description: "Profile completeness and activity" },
 ];
 
-const BALANCED_WEIGHTS: CustomWeights = {
-  certifications: 0.25,
-  experience: 0.20,
-  availability: 0.15,
-  location: 0.15,
-  cultural_fit: 0.15,
-  engagement: 0.10,
+const PRIORITY_UNITS: Record<Priority, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
 };
 
-export function WeightingSliders({ value, onChange }: WeightingSlidersProps) {
-  const [localWeights, setLocalWeights] = useState<CustomWeights>(value);
+const PRIORITY_LABELS: Record<Priority, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
 
-  const handleSliderChange = (key: keyof CustomWeights, newValue: number) => {
-    const otherKeys = WEIGHT_CRITERIA.map((c) => c.key).filter((k) => k !== key);
-    const remaining = 1.0 - newValue;
-    const otherTotal = otherKeys.reduce((sum, k) => sum + localWeights[k], 0);
+const PRIORITIES: Priority[] = ["low", "medium", "high"];
 
-    const newWeights = { ...localWeights, [key]: newValue };
+function prioritiesToWeights(priorities: Priorities): CustomWeights {
+  const totalUnits = Object.values(priorities).reduce(
+    (sum, p) => sum + PRIORITY_UNITS[p],
+    0
+  );
+  return Object.fromEntries(
+    WEIGHT_CRITERIA.map(({ key }) => [key, PRIORITY_UNITS[priorities[key]] / totalUnits])
+  ) as CustomWeights;
+}
 
-    if (otherTotal === 0) {
-      // Distribute evenly among others
-      const evenShare = remaining / otherKeys.length;
-      otherKeys.forEach((k) => {
-        newWeights[k] = evenShare;
-      });
-    } else {
-      // Distribute proportionally among others
-      otherKeys.forEach((k) => {
-        newWeights[k] = (localWeights[k] / otherTotal) * remaining;
-      });
-    }
+const DEFAULT_PRIORITIES: Priorities = {
+  certifications: "medium",
+  experience: "medium",
+  availability: "medium",
+  location: "medium",
+  cultural_fit: "medium",
+  engagement: "medium",
+};
 
-    // Fix floating point drift — ensure exact sum of 1.0
-    const total = Object.values(newWeights).reduce((s, v) => s + v, 0);
-    const drift = 1.0 - total;
-    const largestKey = otherKeys.reduce((a, b) => (newWeights[b] > newWeights[a] ? b : a));
-    newWeights[largestKey] = Math.max(0, newWeights[largestKey] + drift);
+export function WeightingSliders({ onChange }: WeightingSlidersProps) {
+  // `value` prop kept for interface compatibility but priorities are managed internally
+  const [priorities, setPriorities] = useState<Priorities>(DEFAULT_PRIORITIES);
 
-    setLocalWeights(newWeights);
-    onChange(newWeights);
+  const handlePriorityChange = (key: keyof CustomWeights, priority: Priority) => {
+    const updated = { ...priorities, [key]: priority };
+    setPriorities(updated);
+    onChange(prioritiesToWeights(updated));
   };
 
   const resetToBalanced = () => {
-    setLocalWeights(BALANCED_WEIGHTS);
-    onChange(BALANCED_WEIGHTS);
+    setPriorities(DEFAULT_PRIORITIES);
+    onChange(prioritiesToWeights(DEFAULT_PRIORITIES));
   };
+
+  const weights = prioritiesToWeights(priorities);
 
   return (
     <Card>
@@ -105,7 +91,7 @@ export function WeightingSliders({ value, onChange }: WeightingSlidersProps) {
           <div>
             <CardTitle>Custom Weighting</CardTitle>
             <CardDescription>
-              Adjust the importance of each criterion in the FitScore calculation
+              Set the importance of each criterion in the FitScore calculation
             </CardDescription>
           </div>
           <button
@@ -117,52 +103,47 @@ export function WeightingSliders({ value, onChange }: WeightingSlidersProps) {
           </button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {WEIGHT_CRITERIA.map((criterion) => {
-          const weight = localWeights[criterion.key];
-          const percentage = Math.round(weight * 100);
+      <CardContent className="space-y-4">
+        {WEIGHT_CRITERIA.map(({ key, label, description }) => {
+          const current = priorities[key];
+          const pct = Math.round(weights[key] * 100);
 
           return (
-            <div key={criterion.key} className="space-y-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <Label htmlFor={`weight-${criterion.key}`} className="font-medium">
-                    {criterion.label}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">{criterion.description}</p>
-                </div>
-                <span className="text-2xl font-bold">{percentage}%</span>
+            <div key={key} className="flex items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <Label className="font-medium">{label}</Label>
+                <p className="text-xs text-muted-foreground truncate">{description}</p>
               </div>
-              <input
-                id={`weight-${criterion.key}`}
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={weight}
-                onChange={(e) => handleSliderChange(criterion.key, parseFloat(e.target.value))}
-                className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-zinc-200"
-                style={{
-                  background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${percentage}%, rgb(228, 228, 231) ${percentage}%, rgb(228, 228, 231) 100%)`,
-                }}
-              />
+
+              <div className="flex rounded-md border border-zinc-200 overflow-hidden shrink-0">
+                {PRIORITIES.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => handlePriorityChange(key, p)}
+                    className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                      current === p
+                        ? "bg-primary text-white"
+                        : "bg-white text-zinc-600 hover:bg-zinc-50"
+                    } ${p !== "low" ? "border-l border-zinc-200" : ""}`}
+                  >
+                    {PRIORITY_LABELS[p]}
+                  </button>
+                ))}
+              </div>
+
+              <span className="text-sm font-semibold text-zinc-500 w-10 text-right shrink-0">
+                {pct}%
+              </span>
             </div>
           );
         })}
 
-        <div className="pt-4 border-t border-zinc-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <Label className="text-lg font-semibold">Total</Label>
-              <p className="text-xs text-muted-foreground">Always sums to 100%</p>
-            </div>
-            <span className="text-3xl font-bold text-green-600">100%</span>
-          </div>
-          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-sm text-green-800">
-              ✓ Weights automatically balance to 100%
-            </p>
-          </div>
+        <div className="pt-4 border-t border-zinc-200 flex justify-between items-center">
+          <p className="text-xs text-muted-foreground">
+            Weights are calculated from priorities and always sum to 100%
+          </p>
+          <span className="text-sm font-bold text-green-600">Total: 100%</span>
         </div>
       </CardContent>
     </Card>

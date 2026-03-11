@@ -109,7 +109,10 @@ export default async function ManagerJobsPage() {
       ) : (
         <div className="space-y-4 mb-6">
           {jobs.map((job) => (
-            <Card key={job.id} className="hover:shadow-lg transition-shadow">
+            <Card key={job.id} className="relative hover:shadow-lg transition-shadow">
+              <div className="absolute top-3 right-3 z-10">
+                <DeleteJobButton jobId={job.id} jobTitle={job.title} />
+              </div>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex gap-4 items-start flex-1">
@@ -136,7 +139,7 @@ export default async function ManagerJobsPage() {
                       </CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 mr-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       job.is_active ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-700'
                     }`}>
@@ -156,7 +159,6 @@ export default async function ManagerJobsPage() {
                   <Link href={`/dashboard/manager/${job.id}/edit`}>
                     <Button size="sm" variant="outline">Edit</Button>
                   </Link>
-                  <DeleteJobButton jobId={job.id} jobTitle={job.title} />
                 </div>
               </CardContent>
             </Card>

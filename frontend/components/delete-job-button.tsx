@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
 import { jobAPI } from "@/lib/api-client";
 
 export function DeleteJobButton({ jobId, jobTitle }: { jobId: number; jobTitle: string }) {
@@ -32,13 +31,16 @@ export function DeleteJobButton({ jobId, jobTitle }: { jobId: number; jobTitle: 
   }
 
   return (
-    <Button
-      size="sm"
-      variant="destructive"
+    <button
       onClick={handleDelete}
       disabled={isDeleting}
+      className="p-1 rounded-full text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+      aria-label={`Delete ${jobTitle}`}
     >
-      {isDeleting ? "Deleting..." : "Delete"}
-    </Button>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
   );
 }

@@ -29,9 +29,9 @@ export function ScheduleDisplay({ availableTimes }: ScheduleDisplayProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1.5">
       {/* Header Row */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1.5">
         <div className="text-xs font-medium text-muted-foreground"></div>
         {TIME_PERIODS.map((period) => (
           <div key={period.value} className="text-xs font-medium text-center text-muted-foreground">
@@ -42,8 +42,8 @@ export function ScheduleDisplay({ availableTimes }: ScheduleDisplayProps) {
 
       {/* Day Rows */}
       {DAYS.map((day) => (
-        <div key={day} className="grid grid-cols-4 gap-2">
-          <div className="text-sm font-medium flex items-center">
+        <div key={day} className="grid grid-cols-4 gap-1.5">
+          <div className="text-xs font-medium flex items-center">
             {DAY_ABBREVIATIONS[day]}
           </div>
           {TIME_PERIODS.map((period) => {
@@ -52,7 +52,7 @@ export function ScheduleDisplay({ availableTimes }: ScheduleDisplayProps) {
               <div
                 key={period.value}
                 className={`
-                  h-10 rounded-md border text-xs font-medium
+                  h-7 rounded border text-xs font-medium
                   flex items-center justify-center transition-colors
                   ${
                     selected

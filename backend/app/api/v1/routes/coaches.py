@@ -4,10 +4,12 @@ import logging
 from datetime import datetime
 from typing import Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
+from app.config import settings
 from app.core.fitscore.engine import FitScoreEngine
 from app.db.session import get_db
 from app.models.brand import Location
@@ -22,7 +24,39 @@ router = APIRouter(prefix="/coaches", tags=["coaches"])
 logger = logging.getLogger(__name__)
 
 
-def get_or_create_user(db: Session, current_user: dict) -> User:
+async def fetch_clerk_user_info(clerk_user_id: str) -> dict:
+    """
+    Fetch user information from Clerk API
+
+    Args:
+        clerk_user_id: Clerk user ID (from JWT sub claim)
+
+    Returns:
+        dict: User info from Clerk API including email, first_name, last_name
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://api.clerk.com/v1/users/{clerk_user_id}",
+                headers={"Authorization": f"Bearer {settings.clerk_secret_key}"}
+            )
+            if response.status_code == 200:
+                user_data = response.json()
+                logger.info(f"Fetched Clerk user info for {clerk_user_id}")
+                return {
+                    "email": user_data.get("email_addresses", [{}])[0].get("email_address"),
+                    "first_name": user_data.get("first_name"),
+                    "last_name": user_data.get("last_name"),
+                }
+            else:
+                logger.warning(f"Failed to fetch Clerk user info: {response.status_code}")
+                return {}
+    except Exception as e:
+        logger.error(f"Error fetching Clerk user info: {str(e)}")
+        return {}
+
+
+async def get_or_create_user(db: Session, current_user: dict) -> User:
     """
     Get or create a User record from Clerk authentication
 
@@ -48,13 +82,28 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
         user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
 
         if not user:
-            # Create new user record
-            # Extract email from JWT - Clerk uses different field names
+            # Fetch user info from Clerk API
+            clerk_user_info = await fetch_clerk_user_info(clerk_user_id)
+
+            # Extract email - try JWT first, then Clerk API, finally use fallback
             email = (
                 current_user.get("email")
                 or current_user.get("email_address")
                 or current_user.get("primary_email")
-                or f"{clerk_user_id}@clerk.user"
+                or clerk_user_info.get("email")
+                or f"{clerk_user_id}@unknown.com"
+            )
+
+            first_name = (
+                current_user.get("given_name")
+                or current_user.get("first_name")
+                or clerk_user_info.get("first_name")
+            )
+
+            last_name = (
+                current_user.get("family_name")
+                or current_user.get("last_name")
+                or clerk_user_info.get("last_name")
             )
 
             logger.info(f"Creating new user with email: {email}")
@@ -62,8 +111,8 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
             user = User(
                 clerk_user_id=clerk_user_id,
                 email=email,
-                first_name=current_user.get("given_name") or current_user.get("first_name"),
-                last_name=current_user.get("family_name") or current_user.get("last_name"),
+                first_name=first_name,
+                last_name=last_name,
                 role="coach",  # Default role for new users
                 brand_id=1,  # Default brand for Phase 1
             )
@@ -73,6 +122,30 @@ def get_or_create_user(db: Session, current_user: dict) -> User:
             logger.info(f"Created user with ID: {user.id}")
         else:
             logger.info(f"Found existing user with ID: {user.id}")
+
+            # Check if user has placeholder data and needs updating
+            needs_update = (
+                user.email.endswith("@unknown.com") or
+                user.email.endswith("@clerk.user") or
+                not user.first_name or
+                not user.last_name
+            )
+
+            if needs_update:
+                logger.info(f"User {user.id} has placeholder data, fetching real data from Clerk")
+                clerk_user_info = await fetch_clerk_user_info(clerk_user_id)
+
+                # Update with real data from Clerk API
+                if clerk_user_info.get("email"):
+                    user.email = clerk_user_info["email"]
+                if clerk_user_info.get("first_name"):
+                    user.first_name = clerk_user_info["first_name"]
+                if clerk_user_info.get("last_name"):
+                    user.last_name = clerk_user_info["last_name"]
+
+                db.commit()
+                db.refresh(user)
+                logger.info(f"Updated user {user.id} with Clerk data: {user.email}")
 
         return user
     except Exception as e:
@@ -133,7 +206,7 @@ async def create_coach(
         )
 
     # Get or create user from Clerk authentication
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     # Check if coach already exists for this user
     existing_coach = db.query(Coach).filter(Coach.user_id == user.id).first()
@@ -206,20 +279,27 @@ async def get_coach(
     """
     Get a single coach profile by ID
 
-    Requires authentication. Users can only view their own coach profiles.
+    Requires authentication. Coaches can view their own profile,
+    managers and admins can view any coach profile.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
-    coach = db.query(Coach).filter(Coach.id == coach_id).first()
+    # Load coach with user relationship
+    coach = db.query(Coach).options(joinedload(Coach.user)).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Coach {coach_id} not found"
         )
 
-    # Verify that this coach belongs to the current user
-    # (Managers and admins viewing candidates will use the matches endpoint)
-    if coach.user_id != user.id:
+    # Allow access if:
+    # 1. User is viewing their own coach profile
+    # 2. User is a manager (location_manager role)
+    # 3. User is an admin (brand_admin or regional_director role)
+    is_own_profile = coach.user_id == user.id
+    is_manager_or_admin = user.role in ["location_manager", "regional_director", "brand_admin"]
+
+    if not (is_own_profile or is_manager_or_admin):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to view this coach profile",
@@ -244,7 +324,7 @@ async def list_coaches(
     Requires authentication. Users see only their own coach profiles.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     # Start with query filtered by current user
     query = db.query(Coach).filter(Coach.user_id == user.id)
@@ -285,7 +365,7 @@ async def update_coach(
     Requires authentication. Users can only update their own coach profiles.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     # Fetch the coach and verify ownership
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
@@ -366,7 +446,7 @@ async def get_coach_matches(
     Only returns jobs with status='open'.
     """
     # Get the current user from database
-    user = get_or_create_user(db, current_user)
+    user = await get_or_create_user(db, current_user)
 
     # Get coach and verify ownership
     coach = db.query(Coach).filter(Coach.id == coach_id).first()

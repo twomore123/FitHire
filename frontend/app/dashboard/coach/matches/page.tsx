@@ -32,7 +32,29 @@ export default async function CoachMatchesPage() {
         coachId = fetchedCoachId;
         // Fetch matches for this coach
         const matchesData = await coachAPI.getMatches(fetchedCoachId, 20, token);
-        matches = matchesData.matches || [];
+
+        // Transform backend response to match frontend interface
+        matches = (matchesData.matches || []).map((match: any) => ({
+          job_id: match.job.id,
+          title: match.job.title,
+          description: match.job.description,
+          city: match.job.city,
+          state: match.job.state,
+          role_type: match.job.role_type,
+          compensation_type: match.job.compensation_type,
+          compensation_min: match.job.compensation_min,
+          compensation_max: match.job.compensation_max,
+          brand_logo_url: match.job.brand_logo_url,
+          fitscore: match.fitscore,
+          fitscore_breakdown: {
+            certification_score: match.score_breakdown?.cert_score || 0,
+            experience_score: match.score_breakdown?.experience_score || 0,
+            availability_score: match.score_breakdown?.availability_score || 0,
+            location_score: match.score_breakdown?.location_score || 0,
+            culture_score: match.score_breakdown?.culture_score || 0,
+            engagement_score: match.score_breakdown?.engagement_score || 0,
+          },
+        }));
       }
     }
   } catch (error) {

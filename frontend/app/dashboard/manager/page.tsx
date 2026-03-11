@@ -49,6 +49,33 @@ export default async function ManagerJobsPage() {
 
   const activeJobs = jobs.filter(job => job.is_active).length;
 
+  // Fetch candidates for all jobs to compute average FitScore
+  let avgFitScore: number | null = null;
+  if (token && jobs.length > 0) {
+    try {
+      const allCandidateResults = await Promise.all(
+        jobs.map((job) => jobAPI.getCandidates(job.id, 20, token).catch(() => ({ candidates: [] })))
+      );
+      const allScores: number[] = [];
+      for (const result of allCandidateResults) {
+        const candidates = result.candidates || result || [];
+        if (Array.isArray(candidates)) {
+          for (const candidate of candidates) {
+            if (candidate.fitscore != null && typeof candidate.fitscore === "number") {
+              allScores.push(candidate.fitscore);
+            }
+          }
+        }
+      }
+      if (allScores.length > 0) {
+        const sum = allScores.reduce((a: number, b: number) => a + b, 0);
+        avgFitScore = Math.round((sum / allScores.length) * 100);
+      }
+    } catch (error) {
+      console.error("Error computing avg FitScore:", error);
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -171,9 +198,11 @@ export default async function ManagerJobsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
+            <div className="text-2xl font-bold">
+              {avgFitScore !== null ? avgFitScore : "--"}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Average match quality
+              {avgFitScore !== null ? "Across all candidates" : "No candidates yet"}
             </p>
           </CardContent>
         </Card>

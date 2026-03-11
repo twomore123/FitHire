@@ -142,17 +142,17 @@ export default async function ManagerJobsPage() {
                 <div className="flex justify-between items-start">
                   <div className="flex gap-4 items-start flex-1">
                     {job.brand_logo_url ? (
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-border/50 flex-shrink-0 bg-white shadow-sm">
+                      <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-border/60 flex-shrink-0 bg-white shadow-md">
                         <Image
                           src={job.brand_logo_url}
                           alt={`${job.title} logo`}
                           fill
-                          className="object-contain p-1.5"
+                          className="object-cover"
                         />
                       </div>
                     ) : (
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl font-bold text-primary">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border-2 border-primary/15 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <span className="text-2xl font-bold text-primary">
                           {job.title?.charAt(0) || "J"}
                         </span>
                       </div>

@@ -7,9 +7,9 @@ interface BrandLogoProps {
 }
 
 const dimensions = {
-  fithire: { sm: { w: 120, h: 38 }, md: { w: 160, h: 50 }, lg: { w: 220, h: 69 } },
-  coach360: { sm: { w: 140, h: 70 }, md: { w: 200, h: 100 }, lg: { w: 300, h: 150 } },
-  icon: { sm: { w: 32, h: 32 }, md: { w: 48, h: 48 }, lg: { w: 72, h: 72 } },
+  fithire: { sm: { w: 160, h: 50 }, md: { w: 220, h: 69 }, lg: { w: 300, h: 94 } },
+  coach360: { sm: { w: 180, h: 90 }, md: { w: 260, h: 130 }, lg: { w: 360, h: 180 } },
+  icon: { sm: { w: 44, h: 44 }, md: { w: 64, h: 64 }, lg: { w: 96, h: 96 } },
 };
 
 const srcs = {

@@ -34,12 +34,12 @@ export default function Home() {
 
         <div className="relative container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-10">
               <Image
                 src="/logos/360-icon-green.png"
                 alt="Coach 360"
-                width={80}
-                height={80}
+                width={120}
+                height={120}
                 priority
               />
             </div>

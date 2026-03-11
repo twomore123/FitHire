@@ -25,14 +25,11 @@ DATABASE_URL = os.environ.get(
 
 OWNER_EMAIL = "reidsmendoza12@gmail.com"
 
-# Logo URLs served from the Vercel frontend
-LOGO_BASE = "https://fithire.vercel.app/logos"
-
-# ── Brand definitions ────────────────────────────────────────────────────────
+# Logo paths served from the frontend public directory
 BRANDS = [
-    {"name": "MADabolic", "slug": "madabolic", "logo": f"{LOGO_BASE}/madabolic.jpeg"},
-    {"name": "Crunch Fitness", "slug": "crunch-fitness", "logo": f"{LOGO_BASE}/crunch.jpeg"},
-    {"name": "Life Time", "slug": "life-time", "logo": f"{LOGO_BASE}/lifetime.jpeg"},
+    {"name": "MADabolic", "slug": "madabolic", "logo": "/logos/madabolic.jpeg"},
+    {"name": "Crunch Fitness", "slug": "crunch-fitness", "logo": "/logos/crunch.jpeg"},
+    {"name": "Life Time", "slug": "life-time", "logo": "/logos/lifetime.jpeg"},
 ]
 
 # ── Job listings (10 total) ──────────────────────────────────────────────────
@@ -509,6 +506,15 @@ def seed_jobs():
             job_id = cur.fetchone()[0]
             jobs_created += 1
             print(f"   Created job #{job_id}: {job_def['title']} — {job_def['city']}, {job_def['state']}")
+
+        # 4. Fix any existing jobs with old absolute logo URLs
+        cur.execute(
+            "UPDATE jobs SET brand_logo_url = REPLACE(brand_logo_url, 'https://fithire.vercel.app', '') "
+            "WHERE brand_logo_url LIKE 'https://fithire.vercel.app%'"
+        )
+        fixed = cur.rowcount
+        if fixed:
+            print(f"   Fixed {fixed} existing job(s) with old absolute logo URLs")
 
         conn.commit()
         print(f"\nDone! Created {jobs_created} job listings.")

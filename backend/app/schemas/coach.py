@@ -6,6 +6,17 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, HttpUrl
 
 
+class UserInfo(BaseModel):
+    """Basic user information for coach profiles"""
+    id: int
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class CertificationItem(BaseModel):
     """Individual certification"""
 
@@ -73,6 +84,7 @@ class CoachResponse(BaseModel):
     id: int
     user_id: int
     brand_id: int
+    user: Optional[UserInfo] = None  # Nested user info
 
     # Basic Info
     city: str

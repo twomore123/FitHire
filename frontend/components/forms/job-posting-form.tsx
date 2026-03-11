@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScheduleSelector } from "@/components/ui/schedule-selector";
 import { WeightingSliders, type CustomWeights } from "@/components/ui/weighting-sliders";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { jobAPI } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 
@@ -80,6 +82,8 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
     compensation_type: initialData?.compensation_type || "hourly",
     compensation_min: initialData?.compensation_min || "",
     compensation_max: initialData?.compensation_max || "",
+    brand_logo_url: initialData?.brand_logo_url || "",
+    brand_banner_url: initialData?.brand_banner_url || "",
     weighting_preset: initialData?.weighting_preset || "balanced",
     fitscore_threshold: initialData?.fitscore_threshold || 0.60,
     custom_weights: initialData?.custom_weights || null,
@@ -353,6 +357,95 @@ export function JobPostingForm({ initialData, jobId, token }: JobPostingFormProp
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Brand Images */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Brand Images (Optional)</CardTitle>
+          <CardDescription>Upload your brand logo and banner</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Brand Logo</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Square logo shown on job cards (recommended: 200x200px)
+            </p>
+            <ImageUpload
+              value={formData.brand_logo_url}
+              onChange={(url) => setFormData({ ...formData, brand_logo_url: url })}
+              folder="brand-logos"
+              label="Brand Logo"
+              aspectRatio="square"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Brand Banner</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Wide banner shown on job detail pages (recommended: 1200x400px)
+            </p>
+            <ImageUpload
+              value={formData.brand_banner_url}
+              onChange={(url) => setFormData({ ...formData, brand_banner_url: url })}
+              folder="brand-banners"
+              label="Brand Banner"
+              aspectRatio="wide"
+            />
+          </div>
+
+          {/* Preview Section */}
+          {(formData.brand_logo_url || formData.brand_banner_url) && (
+            <div className="border-t pt-6 space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Preview</h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  How your images will appear on the platform
+                </p>
+              </div>
+
+              {formData.brand_logo_url && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Job Card Preview</p>
+                  <Card className="max-w-md">
+                    <CardHeader>
+                      <div className="flex gap-4 items-start">
+                        <div className="relative w-16 h-16 rounded-md overflow-hidden border border-zinc-200 flex-shrink-0">
+                          <Image
+                            src={formData.brand_logo_url}
+                            alt="Logo preview"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
+                          <CardTitle>{formData.title || "Job Title"}</CardTitle>
+                          <CardDescription>
+                            {formData.city || "City"}, {formData.state || "ST"} • {formData.role_type || "Role Type"}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </div>
+              )}
+
+              {formData.brand_banner_url && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Job Detail Banner Preview</p>
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden border border-zinc-200">
+                    <Image
+                      src={formData.brand_banner_url}
+                      alt="Banner preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

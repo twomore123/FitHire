@@ -1,9 +1,14 @@
 """
 Seed script: Add 250 additional diverse coach profiles for demo purposes.
 
-Coaches span a wide range of experience levels, certifications, specialties,
-geographic locations, availability patterns, and culture fits. Designed to
-produce realistic variety for FitScore matching demos.
+Strategy: Coaches are generated to *realistically match* the 10 seeded jobs.
+~60% of coaches are placed in job cities with relevant certs so they pass
+the hard gates (location, certs, availability). The remaining ~40% are spread
+across other cities to show realistic non-matches and partial matches.
+
+Within matching coaches, quality still varies widely: some are stellar
+(high experience, many certs, full availability, great culture fit) and
+some are borderline (just meet minimums, few extra certs, patchy availability).
 
 Usage:
     cd backend
@@ -28,7 +33,7 @@ DATABASE_URL = os.environ.get(
 NUM_COACHES = 250
 EMAIL_DOMAIN = "fithire-demo.dev"
 
-# ── Name pools (expanded for uniqueness) ────────────────────────────────────
+# ── Name pools ──────────────────────────────────────────────────────────────
 FIRST_NAMES_F = [
     "Sofia", "Camila", "Valentina", "Lucia", "Mariana", "Daniela", "Priya",
     "Ananya", "Mei", "Yuki", "Aisha", "Fatima", "Zara", "Amara", "Nia",
@@ -55,36 +60,30 @@ LAST_NAMES = [
     "Costa", "Ferreira", "Santos", "Silva", "Oliveira", "Johansson", "Berg",
     "Lindgren", "O'Brien", "O'Connor", "McCarthy", "Sullivan", "Walsh",
     "Kowalski", "Novak", "Petrovic", "Volkov", "Ivanov", "Dubois", "Laurent",
-    "Moreau", "Russo", "Romano", "Bianchi", "Van der Berg", "De Vries",
-    "Yamamoto", "Sato", "Watanabe", "Kobayashi", "Hashimoto",
+    "Moreau", "Russo", "Romano", "Bianchi", "Yamamoto", "Sato", "Watanabe",
     "Fernandez", "Vasquez", "Delgado", "Rios", "Medina", "Vargas",
     "Castillo", "Guerrero", "Romero", "Herrera", "Aguilar", "Soto",
     "Ramos", "Mendez", "Salazar", "Contreras", "Fuentes", "Cardenas",
     "Stone", "Frost", "Rivers", "Banks", "Fields", "Winters", "Cross",
-    "Barrett", "Holt", "Kane", "Marsh", "Quinn", "Steele", "Vaughn",
+    "Barrett", "Holt", "Kane", "Marsh", "Steele", "Vaughn",
     "Spencer", "Dawson", "Burke", "Chambers", "Dunn", "Reeves", "Thornton",
     "Blackwell", "Whitfield", "Donovan", "Gallagher", "Hampton", "Jennings",
     "Malone", "Norris", "Pittman", "Shelton", "Underwood", "Wilder",
 ]
 
-# ── Certifications (grouped by category for realistic combos) ───────────────
-CERT_PERSONAL_TRAINING = ["NASM-CPT", "ACE-CPT", "ISSA-CPT", "NSCA-CSCS", "ACSM-CPT"]
-CERT_GROUP_FITNESS = ["ACE-GFI", "AFAA-GFI", "Les Mills Certified", "Zumba Certified"]
-CERT_YOGA = ["RYT-200", "RYT-500", "Yoga Alliance E-RYT"]
-CERT_PILATES = ["Pilates Mat", "Pilates Reformer", "BASI Pilates", "Stott Pilates"]
-CERT_SPECIALTY = [
+# ── All certifications ──────────────────────────────────────────────────────
+ALL_CERTS = [
+    "NASM-CPT", "ACE-CPT", "ISSA-CPT", "NSCA-CSCS", "ACSM-CPT",
+    "ACE-GFI", "AFAA-GFI", "Les Mills Certified", "Zumba Certified",
+    "RYT-200", "RYT-500", "Yoga Alliance E-RYT",
+    "Pilates Mat", "Pilates Reformer", "BASI Pilates", "Stott Pilates", "NCPT",
     "CrossFit L1", "CrossFit L2", "TRX-STC", "Kettlebell Cert",
     "Spinning Cert", "USAW-L1", "Pre/Postnatal Cert", "Youth Fitness Cert",
     "Senior Fitness Cert", "Corrective Exercise Specialist", "NASM-PES",
     "NASM-CES", "Precision Nutrition L1", "ISSA-SFN", "NASM-FNS",
+    "CPR/AED", "First Aid",
 ]
-CERT_SAFETY = ["CPR/AED", "First Aid"]
-ALL_CERTS = (
-    CERT_PERSONAL_TRAINING + CERT_GROUP_FITNESS + CERT_YOGA +
-    CERT_PILATES + CERT_SPECIALTY + CERT_SAFETY
-)
 
-# ── Specialties (broader range) ─────────────────────────────────────────────
 SPECIALTIES = [
     "HIIT", "Strength Training", "Cycling", "Yoga", "Pilates", "CrossFit",
     "Boxing", "Kickboxing", "Barre", "Dance Fitness", "Functional Training",
@@ -95,8 +94,8 @@ SPECIALTIES = [
     "Senior Fitness", "Group Fitness", "Personal Training", "Meditation",
     "Breathwork", "Swim Coaching", "Running Coaching", "Triathlon Coaching",
     "Martial Arts", "Rock Climbing", "Rowing", "Aqua Fitness",
-    "Adaptive Fitness", "Parkour", "Calisthenics", "Suspension Training",
-    "Animal Flow", "Plyometrics", "Speed & Agility",
+    "Adaptive Fitness", "Calisthenics", "Animal Flow", "Plyometrics",
+    "Speed & Agility",
 ]
 
 TIME_SLOTS = [
@@ -105,168 +104,203 @@ TIME_SLOTS = [
     "Sun AM", "Sun PM",
 ]
 
-LIFESTYLE_TAGS = [
+ALL_LIFESTYLE_TAGS = [
     "wellness", "community", "high-energy", "mindfulness", "competitive",
     "holistic", "body-positive", "results-driven", "luxury", "boutique",
     "outdoor-enthusiast", "tech-savvy", "eco-conscious", "family-friendly",
     "fun", "premium",
 ]
-MOVEMENT_TAGS = [
+ALL_MOVEMENT_TAGS = [
     "technical-precision", "dynamic-flow", "explosive-power",
     "mind-body-connection", "rhythm-based", "endurance-focused",
     "flexibility-oriented", "functional-movement", "strength-focused",
 ]
-INSTRUCTION_TAGS = [
+ALL_INSTRUCTION_TAGS = [
     "motivational", "educational", "hands-on", "demo-heavy",
     "voice-led", "music-driven", "data-informed", "intuitive",
     "compassionate", "high-intensity-cueing", "calm-and-grounding",
 ]
 
-# ── Cities (expanded) ───────────────────────────────────────────────────────
-CITIES = [
-    ("Los Angeles", "CA"), ("San Diego", "CA"), ("San Francisco", "CA"),
-    ("Santa Monica", "CA"), ("Irvine", "CA"), ("Pasadena", "CA"),
-    ("Long Beach", "CA"), ("Oakland", "CA"), ("Sacramento", "CA"),
-    ("San Jose", "CA"), ("Berkeley", "CA"),
-    ("New York", "NY"), ("Brooklyn", "NY"), ("Manhattan", "NY"),
-    ("Queens", "NY"), ("Astoria", "NY"), ("Williamsburg", "NY"),
-    ("Jersey City", "NJ"), ("Hoboken", "NJ"), ("Princeton", "NJ"),
-    ("Miami", "FL"), ("Fort Lauderdale", "FL"), ("Tampa", "FL"),
-    ("Orlando", "FL"), ("Jacksonville", "FL"), ("Naples", "FL"),
-    ("Boca Raton", "FL"), ("Coral Gables", "FL"),
-    ("Austin", "TX"), ("Houston", "TX"), ("Dallas", "TX"),
-    ("San Antonio", "TX"), ("Plano", "TX"), ("Fort Worth", "TX"),
-    ("Chicago", "IL"), ("Naperville", "IL"), ("Evanston", "IL"),
-    ("Denver", "CO"), ("Boulder", "CO"), ("Colorado Springs", "CO"),
-    ("Seattle", "WA"), ("Bellevue", "WA"), ("Tacoma", "WA"),
-    ("Portland", "OR"), ("Bend", "OR"),
-    ("Scottsdale", "AZ"), ("Phoenix", "AZ"), ("Tempe", "AZ"),
-    ("Nashville", "TN"), ("Memphis", "TN"), ("Knoxville", "TN"),
-    ("Atlanta", "GA"), ("Savannah", "GA"), ("Decatur", "GA"),
-    ("Charlotte", "NC"), ("Raleigh", "NC"), ("Asheville", "NC"),
-    ("Boston", "MA"), ("Cambridge", "MA"), ("Brookline", "MA"),
-    ("Washington", "DC"), ("Arlington", "VA"), ("Bethesda", "MD"),
-    ("Minneapolis", "MN"), ("St. Paul", "MN"),
-    ("Salt Lake City", "UT"), ("Park City", "UT"),
-    ("Honolulu", "HI"), ("Las Vegas", "NV"), ("Reno", "NV"),
-    ("Charleston", "SC"), ("Greenville", "SC"),
-    ("Pittsburgh", "PA"), ("Philadelphia", "PA"),
-    ("Detroit", "MI"), ("Ann Arbor", "MI"),
-    ("Indianapolis", "IN"), ("Columbus", "OH"), ("Cincinnati", "OH"),
-    ("Milwaukee", "WI"), ("Madison", "WI"),
-    ("New Orleans", "LA"), ("Baton Rouge", "LA"),
-    ("Kansas City", "MO"), ("St. Louis", "MO"),
-    ("Omaha", "NE"), ("Des Moines", "IA"),
-    ("Richmond", "VA"), ("Virginia Beach", "VA"),
-    ("Boise", "ID"), ("Tucson", "AZ"), ("Albuquerque", "NM"),
+# ── Non-job cities for the ~40% of coaches that won't match on location ─────
+OTHER_CITIES = [
+    ("San Diego", "CA"), ("San Francisco", "CA"), ("Portland", "OR"),
+    ("Seattle", "WA"), ("Atlanta", "GA"), ("Boston", "MA"),
+    ("Philadelphia", "PA"), ("Detroit", "MI"), ("Dallas", "TX"),
+    ("San Antonio", "TX"), ("Orlando", "FL"), ("Tampa", "FL"),
+    ("Phoenix", "AZ"), ("Salt Lake City", "UT"), ("Minneapolis", "MN"),
+    ("Raleigh", "NC"), ("Brooklyn", "NY"), ("Washington", "DC"),
+    ("Las Vegas", "NV"), ("Honolulu", "HI"), ("Indianapolis", "IN"),
+    ("Columbus", "OH"), ("Kansas City", "MO"), ("New Orleans", "LA"),
+    ("Pittsburgh", "PA"), ("Boise", "ID"), ("Tucson", "AZ"),
+    ("Madison", "WI"), ("Richmond", "VA"), ("Charleston", "SC"),
 ]
 
-# ── Coach archetypes for realistic variety ──────────────────────────────────
-# Each archetype defines tendencies for cert selection, specialties, tags, etc.
-ARCHETYPES = [
+# ──────────────────────────────────────────────────────────────────────────────
+# JOB-ALIGNED COACH TEMPLATES
+#
+# Each template targets a specific seeded job. Coaches generated from these
+# templates will ALWAYS have the required certs and be in the right city, but
+# vary in experience, extra certs, availability depth, and culture tag overlap.
+# ──────────────────────────────────────────────────────────────────────────────
+
+JOB_TEMPLATES = [
     {
-        "name": "yoga_instructor",
-        "weight": 15,
-        "cert_pools": [CERT_YOGA, CERT_SAFETY],
-        "specialty_bias": ["Yoga", "Meditation", "Breathwork", "Flexibility", "Mobility"],
-        "lifestyle_bias": ["mindfulness", "holistic", "wellness", "community"],
-        "movement_bias": ["mind-body-connection", "flexibility-oriented", "dynamic-flow"],
-        "instruction_bias": ["calm-and-grounding", "intuitive", "compassionate"],
-        "exp_range": (1, 20),
+        # MADabolic Charlotte — Part-Time Strength & Conditioning
+        "city": "Charlotte", "state": "NC",
+        "required_certs": ["NASM-CPT", "ACE-CPT"],
+        "preferred_certs": ["NSCA-CSCS", "USAW-L1", "Kettlebell Cert"],
+        "bonus_certs": ["CrossFit L1", "NASM-PES", "TRX-STC", "CPR/AED", "First Aid"],
+        "min_exp": 2,
+        "required_avail": ["Mon AM", "Wed AM", "Fri AM", "Sat AM"],
+        "culture_tags": ["high-energy", "community", "competitive", "results-driven"],
+        "specialty_pool": ["Strength Training", "HIIT", "Functional Training", "Olympic Lifting", "Boot Camp", "Kettlebell Training", "Circuit Training"],
+        "lifestyle_pool": ["high-energy", "competitive", "results-driven", "community", "wellness"],
+        "movement_pool": ["strength-focused", "explosive-power", "technical-precision", "functional-movement"],
+        "instruction_pool": ["motivational", "hands-on", "educational", "high-intensity-cueing"],
+        "count": 18,
     },
     {
-        "name": "strength_coach",
-        "weight": 15,
-        "cert_pools": [CERT_PERSONAL_TRAINING, CERT_SPECIALTY, CERT_SAFETY],
-        "specialty_bias": ["Strength Training", "Powerlifting", "Olympic Lifting", "Bodybuilding", "Functional Training"],
-        "lifestyle_bias": ["competitive", "results-driven", "high-energy"],
-        "movement_bias": ["strength-focused", "explosive-power", "technical-precision"],
-        "instruction_bias": ["educational", "hands-on", "data-informed"],
-        "exp_range": (2, 25),
+        # MADabolic Nashville — Full-Time Head Trainer
+        "city": "Nashville", "state": "TN",
+        "required_certs": ["NASM-CPT"],
+        "preferred_certs": ["NSCA-CSCS", "ACE-CPT", "NASM-PES"],
+        "bonus_certs": ["CrossFit L1", "Kettlebell Cert", "USAW-L1", "Precision Nutrition L1", "CPR/AED"],
+        "min_exp": 4,
+        "required_avail": ["Mon AM", "Mon PM", "Tue AM", "Wed AM", "Wed PM", "Thu AM", "Fri AM"],
+        "culture_tags": ["high-energy", "community", "competitive", "results-driven"],
+        "specialty_pool": ["Strength Training", "Personal Training", "HIIT", "Functional Training", "Boot Camp", "Sports Performance"],
+        "lifestyle_pool": ["high-energy", "competitive", "results-driven", "community"],
+        "movement_pool": ["strength-focused", "explosive-power", "functional-movement", "technical-precision"],
+        "instruction_pool": ["motivational", "hands-on", "educational", "high-intensity-cueing"],
+        "count": 15,
     },
     {
-        "name": "group_fitness",
-        "weight": 20,
-        "cert_pools": [CERT_GROUP_FITNESS, CERT_PERSONAL_TRAINING, CERT_SAFETY],
-        "specialty_bias": ["Group Fitness", "HIIT", "Boot Camp", "Circuit Training", "Dance Fitness", "Cardio"],
-        "lifestyle_bias": ["high-energy", "community", "fun", "body-positive"],
-        "movement_bias": ["rhythm-based", "dynamic-flow", "endurance-focused"],
-        "instruction_bias": ["motivational", "music-driven", "high-intensity-cueing", "voice-led"],
-        "exp_range": (1, 15),
+        # MADabolic Austin — Weekend Specialist
+        "city": "Austin", "state": "TX",
+        "required_certs": ["NASM-CPT"],
+        "preferred_certs": ["ACE-CPT", "NSCA-CSCS"],
+        "bonus_certs": ["CrossFit L1", "Kettlebell Cert", "CPR/AED", "First Aid", "NASM-PES"],
+        "min_exp": 1,
+        "required_avail": ["Sat AM", "Sat PM", "Sun AM"],
+        "culture_tags": ["high-energy", "community", "competitive", "results-driven"],
+        "specialty_pool": ["Strength Training", "HIIT", "Functional Training", "Boot Camp", "CrossFit", "Kettlebell Training"],
+        "lifestyle_pool": ["high-energy", "community", "competitive", "outdoor-enthusiast", "fun"],
+        "movement_pool": ["strength-focused", "explosive-power", "functional-movement"],
+        "instruction_pool": ["motivational", "hands-on", "high-intensity-cueing"],
+        "count": 18,
     },
     {
-        "name": "pilates_specialist",
-        "weight": 10,
-        "cert_pools": [CERT_PILATES, CERT_SAFETY],
-        "specialty_bias": ["Pilates", "Barre", "Core Training", "Flexibility", "Rehabilitation"],
-        "lifestyle_bias": ["boutique", "wellness", "body-positive", "luxury"],
-        "movement_bias": ["technical-precision", "mind-body-connection", "flexibility-oriented"],
-        "instruction_bias": ["educational", "hands-on", "demo-heavy"],
-        "exp_range": (2, 18),
+        # MADabolic Denver — Evening Strength Coach
+        "city": "Denver", "state": "CO",
+        "required_certs": ["ACE-CPT"],
+        "preferred_certs": ["NASM-CPT", "NSCA-CSCS"],
+        "bonus_certs": ["CrossFit L1", "Kettlebell Cert", "USAW-L1", "CPR/AED", "First Aid"],
+        "min_exp": 2,
+        "required_avail": ["Mon PM", "Tue PM", "Wed PM", "Thu PM"],
+        "culture_tags": ["high-energy", "community", "competitive", "results-driven"],
+        "specialty_pool": ["Strength Training", "HIIT", "Functional Training", "Olympic Lifting", "Circuit Training", "Boot Camp"],
+        "lifestyle_pool": ["high-energy", "competitive", "results-driven", "outdoor-enthusiast", "community"],
+        "movement_pool": ["strength-focused", "explosive-power", "functional-movement", "technical-precision"],
+        "instruction_pool": ["motivational", "hands-on", "educational", "high-intensity-cueing"],
+        "count": 18,
     },
     {
-        "name": "crossfit_athlete",
-        "weight": 10,
-        "cert_pools": [CERT_SPECIALTY, CERT_PERSONAL_TRAINING, CERT_SAFETY],
-        "specialty_bias": ["CrossFit", "Olympic Lifting", "Functional Training", "Kettlebell Training", "Plyometrics"],
-        "lifestyle_bias": ["competitive", "community", "high-energy", "results-driven"],
-        "movement_bias": ["explosive-power", "functional-movement", "strength-focused"],
-        "instruction_bias": ["motivational", "high-intensity-cueing", "hands-on"],
-        "exp_range": (1, 12),
+        # Crunch Miami — Group Fitness All Formats
+        "city": "Miami", "state": "FL",
+        "required_certs": ["ACE-GFI"],
+        "preferred_certs": ["NASM-CPT", "AFAA-GFI"],
+        "bonus_certs": ["Les Mills Certified", "Zumba Certified", "Spinning Cert", "CPR/AED", "ACE-CPT"],
+        "min_exp": 1,
+        "required_avail": ["Mon AM", "Tue PM", "Wed AM", "Thu PM", "Sat AM"],
+        "culture_tags": ["fun", "high-energy", "community", "body-positive"],
+        "specialty_pool": ["Group Fitness", "HIIT", "Dance Fitness", "Cycling", "Boot Camp", "Cardio", "Circuit Training", "Barre"],
+        "lifestyle_pool": ["fun", "high-energy", "community", "body-positive", "wellness"],
+        "movement_pool": ["rhythm-based", "dynamic-flow", "endurance-focused"],
+        "instruction_pool": ["motivational", "music-driven", "voice-led", "high-intensity-cueing"],
+        "count": 18,
     },
     {
-        "name": "combat_sports",
-        "weight": 8,
-        "cert_pools": [CERT_GROUP_FITNESS, CERT_PERSONAL_TRAINING, CERT_SAFETY],
-        "specialty_bias": ["Boxing", "Kickboxing", "Martial Arts", "HIIT", "Speed & Agility"],
-        "lifestyle_bias": ["competitive", "high-energy", "results-driven"],
-        "movement_bias": ["explosive-power", "rhythm-based", "endurance-focused"],
-        "instruction_bias": ["motivational", "demo-heavy", "high-intensity-cueing"],
-        "exp_range": (2, 20),
+        # Crunch LA — Personal Trainer
+        "city": "Los Angeles", "state": "CA",
+        "required_certs": ["NASM-CPT"],
+        "preferred_certs": ["ACE-CPT", "NSCA-CSCS", "Precision Nutrition L1"],
+        "bonus_certs": ["NASM-PES", "NASM-CES", "TRX-STC", "CPR/AED", "First Aid", "ISSA-SFN"],
+        "min_exp": 2,
+        "required_avail": ["Mon AM", "Mon PM", "Tue AM", "Wed PM", "Thu AM", "Fri AM"],
+        "culture_tags": ["results-driven", "fun", "high-energy", "community"],
+        "specialty_pool": ["Personal Training", "Strength Training", "HIIT", "Weight Loss", "Nutrition Coaching", "Functional Training", "Bodybuilding"],
+        "lifestyle_pool": ["results-driven", "fun", "high-energy", "community", "wellness", "boutique"],
+        "movement_pool": ["strength-focused", "functional-movement", "technical-precision"],
+        "instruction_pool": ["motivational", "hands-on", "educational", "data-informed"],
+        "count": 18,
     },
     {
-        "name": "cycling_instructor",
-        "weight": 8,
-        "cert_pools": [CERT_GROUP_FITNESS, CERT_SAFETY],
-        "specialty_bias": ["Cycling", "Cardio", "HIIT", "Triathlon Coaching"],
-        "lifestyle_bias": ["high-energy", "community", "tech-savvy", "competitive"],
-        "movement_bias": ["rhythm-based", "endurance-focused", "dynamic-flow"],
-        "instruction_bias": ["music-driven", "motivational", "voice-led"],
-        "exp_range": (1, 10),
+        # Crunch NY — Yoga Instructor
+        "city": "New York", "state": "NY",
+        "required_certs": ["RYT-200"],
+        "preferred_certs": ["RYT-500", "NASM-CPT"],
+        "bonus_certs": ["Yoga Alliance E-RYT", "ACE-GFI", "Pilates Mat", "CPR/AED", "First Aid", "Meditation Cert"],
+        "min_exp": 2,
+        "required_avail": ["Mon AM", "Wed AM", "Thu PM", "Sat AM", "Sun AM"],
+        "culture_tags": ["wellness", "mindfulness", "community", "holistic"],
+        "specialty_pool": ["Yoga", "Meditation", "Breathwork", "Flexibility", "Mobility", "Pilates", "Barre"],
+        "lifestyle_pool": ["wellness", "mindfulness", "community", "holistic", "body-positive", "eco-conscious"],
+        "movement_pool": ["mind-body-connection", "flexibility-oriented", "dynamic-flow"],
+        "instruction_pool": ["calm-and-grounding", "intuitive", "compassionate", "voice-led"],
+        "count": 18,
     },
     {
-        "name": "rehab_specialist",
-        "weight": 5,
-        "cert_pools": [CERT_PERSONAL_TRAINING, CERT_SPECIALTY, CERT_SAFETY],
-        "specialty_bias": ["Rehabilitation", "Mobility", "Corrective Exercise Specialist", "Senior Fitness", "Adaptive Fitness"],
-        "lifestyle_bias": ["holistic", "wellness", "family-friendly", "body-positive"],
-        "movement_bias": ["functional-movement", "flexibility-oriented", "mind-body-connection"],
-        "instruction_bias": ["compassionate", "educational", "hands-on", "intuitive"],
-        "exp_range": (3, 25),
+        # Life Time Scottsdale — Certified Personal Trainer
+        "city": "Scottsdale", "state": "AZ",
+        "required_certs": ["NASM-CPT", "ACE-CPT"],
+        "preferred_certs": ["NSCA-CSCS", "Precision Nutrition L1"],
+        "bonus_certs": ["NASM-PES", "NASM-CES", "TRX-STC", "ISSA-SFN", "CPR/AED", "First Aid"],
+        "min_exp": 3,
+        "required_avail": ["Mon AM", "Mon PM", "Tue AM", "Wed AM", "Wed PM", "Thu AM", "Fri AM"],
+        "culture_tags": ["premium", "results-driven", "wellness", "community"],
+        "specialty_pool": ["Personal Training", "Strength Training", "Weight Loss", "Nutrition Coaching", "Functional Training", "Sports Performance", "HIIT"],
+        "lifestyle_pool": ["premium", "results-driven", "wellness", "luxury", "community"],
+        "movement_pool": ["strength-focused", "functional-movement", "technical-precision"],
+        "instruction_pool": ["educational", "hands-on", "data-informed", "motivational"],
+        "count": 15,
     },
     {
-        "name": "outdoor_adventure",
-        "weight": 5,
-        "cert_pools": [CERT_PERSONAL_TRAINING, CERT_SPECIALTY, CERT_SAFETY],
-        "specialty_bias": ["Running Coaching", "Triathlon Coaching", "Rock Climbing", "Swim Coaching", "Boot Camp"],
-        "lifestyle_bias": ["outdoor-enthusiast", "community", "eco-conscious", "competitive"],
-        "movement_bias": ["endurance-focused", "functional-movement", "explosive-power"],
-        "instruction_bias": ["motivational", "data-informed", "hands-on"],
-        "exp_range": (2, 18),
+        # Life Time Chicago — Pilates Instructor
+        "city": "Chicago", "state": "IL",
+        "required_certs": ["NCPT"],
+        "preferred_certs": ["BASI Pilates", "Pilates Reformer"],
+        "bonus_certs": ["Pilates Mat", "Stott Pilates", "ACE-GFI", "Corrective Exercise Specialist", "CPR/AED", "Pre/Postnatal Cert"],
+        "min_exp": 3,
+        "required_avail": ["Mon AM", "Tue AM", "Tue PM", "Wed AM", "Thu PM", "Fri AM", "Sat AM"],
+        "culture_tags": ["wellness", "mindfulness", "premium", "community"],
+        "specialty_pool": ["Pilates", "Barre", "Core Training", "Flexibility", "Rehabilitation", "Mobility", "Prenatal Fitness"],
+        "lifestyle_pool": ["wellness", "boutique", "premium", "mindfulness", "body-positive"],
+        "movement_pool": ["technical-precision", "mind-body-connection", "flexibility-oriented"],
+        "instruction_pool": ["educational", "hands-on", "demo-heavy", "compassionate"],
+        "count": 15,
     },
     {
-        "name": "wellness_generalist",
-        "weight": 4,
-        "cert_pools": [CERT_PERSONAL_TRAINING, CERT_SPECIALTY, CERT_SAFETY],
-        "specialty_bias": ["Nutrition Coaching", "Weight Loss", "Personal Training", "Meditation", "Breathwork"],
-        "lifestyle_bias": ["holistic", "wellness", "mindfulness", "body-positive"],
-        "movement_bias": ["mind-body-connection", "functional-movement", "flexibility-oriented"],
-        "instruction_bias": ["compassionate", "intuitive", "educational"],
-        "exp_range": (1, 15),
+        # Life Time Houston — Group Fitness HIIT & Cycle
+        "city": "Houston", "state": "TX",
+        "required_certs": ["ACE-GFI"],
+        "preferred_certs": ["NASM-CPT", "AFAA-GFI", "Spinning Cert"],
+        "bonus_certs": ["Les Mills Certified", "ACE-CPT", "Zumba Certified", "CPR/AED", "First Aid"],
+        "min_exp": 2,
+        "required_avail": ["Mon AM", "Tue PM", "Wed AM", "Thu PM", "Fri AM", "Sat AM"],
+        "culture_tags": ["high-energy", "community", "premium", "fun"],
+        "specialty_pool": ["Group Fitness", "HIIT", "Cycling", "Cardio", "Circuit Training", "Boot Camp", "Dance Fitness"],
+        "lifestyle_pool": ["high-energy", "community", "premium", "fun", "wellness"],
+        "movement_pool": ["rhythm-based", "endurance-focused", "dynamic-flow", "explosive-power"],
+        "instruction_pool": ["motivational", "music-driven", "voice-led", "high-intensity-cueing"],
+        "count": 17,
     },
 ]
 
-# ── Bios (expanded & varied) ────────────────────────────────────────────────
+# Remaining coaches go to non-job cities
+TARGETED_COUNT = sum(t["count"] for t in JOB_TEMPLATES)  # ~170
+RANDOM_COUNT = NUM_COACHES - TARGETED_COUNT  # ~80
+
+# ── Bios ─────────────────────────────────────────────────────────────────────
 BIOS = [
     "I believe fitness should be challenging AND fun. My classes are a blend of science-backed programming and contagious energy.",
     "Former D1 athlete who found a passion for coaching after retirement. I help everyone from beginners to competitive athletes.",
@@ -277,7 +311,7 @@ BIOS = [
     "Certified strength coach who geeks out on programming periodization and progressive overload principles.",
     "Dance background turned fitness career. I bring choreography, rhythm, and pure joy to every class I teach.",
     "As a former physical therapist, I bring a rehab-minded approach to every training session.",
-    "Mom of three who found her calling in prenatal and postpartatal fitness. I understand the journey firsthand.",
+    "Mom of three who found her calling in prenatal and postnatal fitness. I understand the journey firsthand.",
     "CrossFit changed my life, and now I want to share that transformation with others. Scalable programming for all levels.",
     "Pilates instructor with a keen eye for alignment. I help clients build core strength that translates to everyday life.",
     "Boxing coach for 10+ years. I make combat fitness accessible, safe, and incredibly rewarding.",
@@ -289,158 +323,204 @@ BIOS = [
     "Kettlebell enthusiast who loves the simplicity and effectiveness of single-implement training.",
     "Meditation and breathwork guide helping stressed professionals find calm in the chaos.",
     "Former competitive gymnast turned flexibility and mobility coach. Movement quality over quantity.",
-    "I coach triathletes from their first sprint to Ironman. Structured plans, real results.",
     "Boot camp-style trainer who builds teams, not just bodies. Accountability and camaraderie are my superpowers.",
-    "Movement specialist blending yoga, animal flow, and functional training into creative, flowing sessions.",
     "Data-driven personal trainer. I use wearables, body composition analysis, and progress tracking to optimize results.",
     "Inclusive fitness advocate. I create spaces where everyone — regardless of size, ability, or background — can thrive.",
     "Former Marine turned fitness professional. Discipline, structure, and mental toughness are core to my coaching philosophy.",
-    "Rowing and aqua fitness instructor bringing low-impact, high-result training to every session.",
-    "Speed and agility coach working with youth athletes and weekend warriors alike.",
-    "TRX and suspension training specialist. Bodyweight training reimagined for total-body results.",
-    "I blend Eastern movement practices with Western exercise science for a holistic training experience.",
-    "Passionate about adaptive fitness and making exercise accessible to people of all abilities.",
     "HIIT specialist who keeps sessions under 45 minutes — efficient, effective, and intense.",
     "Barre instructor bringing ballet-inspired conditioning to fitness enthusiasts of all backgrounds.",
     "I focus on the mind-muscle connection. Slow, controlled movements build better bodies.",
-    None,  # Some coaches haven't filled in their bio
-    None,
-    None,
+    "Passionate about creating welcoming, energizing group fitness experiences for every level.",
+    "Dedicated to helping clients discover their strength — both physical and mental.",
 ]
 
 
-def pick_archetype() -> dict:
-    """Weighted random selection of a coach archetype."""
-    weights = [a["weight"] for a in ARCHETYPES]
-    return random.choices(ARCHETYPES, weights=weights, k=1)[0]
+def make_cert_objects(cert_names: list[str]) -> list[dict]:
+    """Turn a list of cert name strings into cert objects with metadata."""
+    result = []
+    for name in cert_names:
+        exp_date = datetime.now() + timedelta(days=random.randint(120, 1400))
+        result.append({
+            "name": name,
+            "verified": random.random() < 0.75,
+            "expiration": exp_date.strftime("%Y-%m-%d"),
+        })
+    return result
 
 
-def generate_coach(index: int) -> dict:
-    """Generate a single coach profile based on a random archetype."""
-    archetype = pick_archetype()
+def generate_targeted_coach(index: int, template: dict) -> dict:
+    """Generate a coach that targets a specific job's requirements.
 
+    All coaches get the required certs and are in the right city.
+    Quality varies: some are stellar, some borderline.
+    """
     is_female = random.random() < 0.55
     first = random.choice(FIRST_NAMES_F if is_female else FIRST_NAMES_M)
     last = random.choice(LAST_NAMES)
-    city, state = random.choice(CITIES)
 
-    # Experience varies by archetype
-    lo, hi = archetype["exp_range"]
-    years_exp = random.randint(lo, hi)
+    city = template["city"]
+    state = template["state"]
 
-    # Certs: pick from archetype-relevant pools, with some randomness
-    cert_pool = []
-    for pool in archetype["cert_pools"]:
-        cert_pool.extend(pool)
+    # ── Experience: always meet minimum, but vary how much above ────────────
+    min_exp = template["min_exp"]
+    # 30% barely meet it, 40% comfortably above, 30% very experienced
+    tier = random.choices(["borderline", "solid", "veteran"], weights=[30, 40, 30], k=1)[0]
+    if tier == "borderline":
+        years_exp = min_exp + random.randint(0, 1)
+    elif tier == "solid":
+        years_exp = min_exp + random.randint(2, 5)
+    else:
+        years_exp = min_exp + random.randint(5, 15)
+
+    # ── Certs: always include all required; vary preferred + bonus ──────────
+    certs = list(template["required_certs"])  # always have these
+
+    # Add preferred certs with high probability
+    for cert in template["preferred_certs"]:
+        if random.random() < 0.55:
+            certs.append(cert)
+
+    # Add bonus certs depending on tier
+    if tier == "borderline":
+        bonus_count = random.randint(0, 1)
+    elif tier == "solid":
+        bonus_count = random.randint(1, 3)
+    else:
+        bonus_count = random.randint(2, 5)
+    available_bonus = [c for c in template["bonus_certs"] if c not in certs]
+    certs.extend(random.sample(available_bonus, min(bonus_count, len(available_bonus))))
+
+    # Always add CPR/AED for experienced coaches
+    if years_exp >= 3 and "CPR/AED" not in certs:
+        certs.append("CPR/AED")
+
     # Deduplicate
-    cert_pool = list(set(cert_pool))
-    num_certs = min(random.randint(1, 3) + (years_exp // 5), len(cert_pool))
-    num_certs = max(1, num_certs)
-    chosen_certs = random.sample(cert_pool, min(num_certs, len(cert_pool)))
+    certs = list(dict.fromkeys(certs))
+    cert_objects = make_cert_objects(certs)
 
-    # Occasionally add a random cert from outside the archetype
-    if random.random() < 0.25 and len(chosen_certs) < 8:
-        extra = random.choice([c for c in ALL_CERTS if c not in chosen_certs])
-        chosen_certs.append(extra)
-
-    cert_objects = []
-    for cert in chosen_certs:
-        exp_date = datetime.now() + timedelta(days=random.randint(60, 1200))
-        cert_objects.append({
-            "name": cert,
-            "verified": random.random() < 0.65,
-            "expiration": exp_date.strftime("%Y-%m-%d"),
-        })
-
-    # Specialties: bias toward archetype, with some random additions
-    specialties = list(set(random.sample(
-        archetype["specialty_bias"],
-        min(random.randint(2, 4), len(archetype["specialty_bias"])),
-    )))
-    # Add 0-2 random extra specialties
+    # ── Specialties ─────────────────────────────────────────────────────────
+    num_specs = random.randint(3, 6)
+    specialties = random.sample(template["specialty_pool"], min(num_specs, len(template["specialty_pool"])))
+    # Add 0-2 random extras
     extras = [s for s in SPECIALTIES if s not in specialties]
     specialties.extend(random.sample(extras, min(random.randint(0, 2), len(extras))))
 
-    # Availability: varied patterns
-    # Some coaches are very available, some only a few slots
-    availability_pattern = random.choices(
-        ["minimal", "part_time", "full_time", "weekends_only"],
-        weights=[15, 35, 35, 15],
-        k=1,
-    )[0]
-    if availability_pattern == "minimal":
-        num_slots = random.randint(2, 4)
-    elif availability_pattern == "part_time":
-        num_slots = random.randint(4, 7)
-    elif availability_pattern == "full_time":
-        num_slots = random.randint(7, 12)
-    else:  # weekends_only
-        weekend_slots = ["Sat AM", "Sat PM", "Sun AM", "Sun PM"]
-        num_slots = random.randint(2, 4)
-        available_times = sorted(
-            random.sample(weekend_slots, num_slots),
-            key=TIME_SLOTS.index,
-        )
-        # Skip the general slot generation
-        num_slots = 0
+    # ── Availability: always cover required slots; vary extras ──────────────
+    required_slots = list(template["required_avail"])
+    extra_pool = [s for s in TIME_SLOTS if s not in required_slots]
 
-    if num_slots > 0:
-        available_times = sorted(
-            random.sample(TIME_SLOTS, min(num_slots, len(TIME_SLOTS))),
-            key=TIME_SLOTS.index,
-        )
+    if tier == "borderline":
+        extra_count = random.randint(0, 2)
+    elif tier == "solid":
+        extra_count = random.randint(2, 5)
+    else:
+        extra_count = random.randint(4, len(extra_pool))
 
-    # Tags: bias toward archetype with some randomness
-    lifestyle = list(set(random.sample(
-        archetype["lifestyle_bias"],
-        min(random.randint(1, 3), len(archetype["lifestyle_bias"])),
-    )))
+    extra_slots = random.sample(extra_pool, min(extra_count, len(extra_pool)))
+    available_times = sorted(required_slots + extra_slots, key=TIME_SLOTS.index)
+
+    # ── Culture/style tags: bias toward matching the job's culture ──────────
+    # Pick from template pools (which overlap with job culture_tags)
+    lifestyle = random.sample(template["lifestyle_pool"], min(random.randint(2, 4), len(template["lifestyle_pool"])))
+    movement = random.sample(template["movement_pool"], min(random.randint(1, 3), len(template["movement_pool"])))
+    instruction = random.sample(template["instruction_pool"], min(random.randint(1, 3), len(template["instruction_pool"])))
+
+    # Occasionally add a random tag to keep variety
     if random.random() < 0.3:
-        extra_tag = random.choice([t for t in LIFESTYLE_TAGS if t not in lifestyle])
-        lifestyle.append(extra_tag)
-
-    movement = list(set(random.sample(
-        archetype["movement_bias"],
-        min(random.randint(1, 2), len(archetype["movement_bias"])),
-    )))
-    if random.random() < 0.25:
-        extra_tag = random.choice([t for t in MOVEMENT_TAGS if t not in movement])
-        movement.append(extra_tag)
-
-    instruction = list(set(random.sample(
-        archetype["instruction_bias"],
-        min(random.randint(1, 2), len(archetype["instruction_bias"])),
-    )))
-    if random.random() < 0.25:
-        extra_tag = random.choice([t for t in INSTRUCTION_TAGS if t not in instruction])
-        instruction.append(extra_tag)
+        extra = random.choice([t for t in ALL_LIFESTYLE_TAGS if t not in lifestyle])
+        lifestyle.append(extra)
+    if random.random() < 0.2:
+        extra = random.choice([t for t in ALL_MOVEMENT_TAGS if t not in movement])
+        movement.append(extra)
 
     bio = random.choice(BIOS)
 
-    # Profile completeness: newer/less experienced coaches tend to have less complete profiles
-    if years_exp <= 2:
-        completeness = round(random.uniform(0.40, 0.75), 2)
-    elif years_exp <= 5:
-        completeness = round(random.uniform(0.55, 0.90), 2)
+    # ── Engagement signals ──────────────────────────────────────────────────
+    if tier == "borderline":
+        completeness = round(random.uniform(0.60, 0.80), 2)
+    elif tier == "solid":
+        completeness = round(random.uniform(0.78, 0.95), 2)
     else:
-        completeness = round(random.uniform(0.70, 1.0), 2)
+        completeness = round(random.uniform(0.90, 1.0), 2)
 
-    # Verification: more experienced coaches more likely verified
     verified_at = None
-    verify_chance = min(0.3 + (years_exp * 0.03), 0.8)
-    if random.random() < verify_chance:
-        days_ago = random.randint(1, 365)
-        verified_at = datetime.utcnow() - timedelta(days=days_ago)
+    if tier != "borderline" or random.random() < 0.3:
+        verified_at = datetime.utcnow() - timedelta(days=random.randint(1, 200))
 
     now = datetime.utcnow()
-    created_days_ago = random.randint(1, 500)
+    created_days_ago = random.randint(5, 400)
     created_at = now - timedelta(days=created_days_ago)
-    last_updated = created_at + timedelta(days=random.randint(0, created_days_ago))
+    # Recent last_updated boosts engagement score
+    if tier == "veteran":
+        last_updated = now - timedelta(days=random.randint(0, 15))
+    elif tier == "solid":
+        last_updated = now - timedelta(days=random.randint(0, 45))
+    else:
+        last_updated = now - timedelta(days=random.randint(10, 120))
 
     return {
         "first_name": first,
         "last_name": last,
-        "email": f"{first.lower()}.{last.lower().replace(' ', '')}.{index}@{EMAIL_DOMAIN}",
+        "email": f"{first.lower()}.{last.lower().replace(' ', '')}.t{index}@{EMAIL_DOMAIN}",
+        "city": city,
+        "state": state,
+        "years_experience": years_exp,
+        "certifications": json.dumps(cert_objects),
+        "specialties": json.dumps(specialties),
+        "available_times": json.dumps(available_times),
+        "lifestyle_tags": json.dumps(lifestyle),
+        "movement_tags": json.dumps(movement),
+        "instruction_tags": json.dumps(instruction),
+        "bio": bio,
+        "profile_completeness": completeness,
+        "verified_at": verified_at,
+        "created_at": created_at,
+        "last_updated": last_updated,
+    }
+
+
+def generate_random_coach(index: int) -> dict:
+    """Generate a coach in a non-job city. These won't match on location
+    but still have decent profiles for general realism."""
+    is_female = random.random() < 0.55
+    first = random.choice(FIRST_NAMES_F if is_female else FIRST_NAMES_M)
+    last = random.choice(LAST_NAMES)
+    city, state = random.choice(OTHER_CITIES)
+
+    years_exp = random.randint(1, 20)
+
+    # Give them a decent spread of certs (3-6)
+    num_certs = random.randint(3, 6)
+    certs = random.sample(ALL_CERTS, num_certs)
+    cert_objects = make_cert_objects(certs)
+
+    num_specs = random.randint(3, 6)
+    specialties = random.sample(SPECIALTIES, num_specs)
+
+    # Broad availability
+    num_slots = random.randint(6, 12)
+    available_times = sorted(random.sample(TIME_SLOTS, num_slots), key=TIME_SLOTS.index)
+
+    lifestyle = random.sample(ALL_LIFESTYLE_TAGS, random.randint(2, 4))
+    movement = random.sample(ALL_MOVEMENT_TAGS, random.randint(1, 3))
+    instruction = random.sample(ALL_INSTRUCTION_TAGS, random.randint(1, 3))
+
+    bio = random.choice(BIOS)
+    completeness = round(random.uniform(0.65, 1.0), 2)
+
+    verified_at = None
+    if random.random() < 0.5:
+        verified_at = datetime.utcnow() - timedelta(days=random.randint(1, 300))
+
+    now = datetime.utcnow()
+    created_days_ago = random.randint(5, 400)
+    created_at = now - timedelta(days=created_days_ago)
+    last_updated = now - timedelta(days=random.randint(0, 60))
+
+    return {
+        "first_name": first,
+        "last_name": last,
+        "email": f"{first.lower()}.{last.lower().replace(' ', '')}.r{index}@{EMAIL_DOMAIN}",
         "city": city,
         "state": state,
         "years_experience": years_exp,
@@ -459,7 +539,7 @@ def generate_coach(index: int) -> dict:
 
 
 def main():
-    print(f"Connecting to database...")
+    print("Connecting to database...")
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
@@ -478,21 +558,35 @@ def main():
         print(f"Created brand 'FitHire Demo' with id={brand_id}")
         conn.commit()
 
-    # Generate coaches
-    coaches_data = [generate_coach(i) for i in range(1, NUM_COACHES + 1)]
-    print(f"Generated {len(coaches_data)} coach profiles. Inserting...")
+    # ── Generate targeted coaches (match specific jobs) ─────────────────────
+    coaches_data = []
+    idx = 1
+    for template in JOB_TEMPLATES:
+        for _ in range(template["count"]):
+            coaches_data.append(generate_targeted_coach(idx, template))
+            idx += 1
+        print(f"  Generated {template['count']} coaches for {template['city']}, {template['state']}")
+
+    # ── Generate random coaches (non-matching cities) ───────────────────────
+    for i in range(RANDOM_COUNT):
+        coaches_data.append(generate_random_coach(idx))
+        idx += 1
+    print(f"  Generated {RANDOM_COUNT} coaches in non-job cities")
+
+    # Shuffle so insertion order is mixed
+    random.shuffle(coaches_data)
+
+    print(f"\nTotal generated: {len(coaches_data)} coach profiles. Inserting...")
 
     inserted = 0
     skipped = 0
     for c in coaches_data:
         try:
-            # Check if email already exists
             cur.execute("SELECT id FROM users WHERE email = %s", (c["email"],))
             if cur.fetchone():
                 skipped += 1
                 continue
 
-            # Create user
             cur.execute(
                 """INSERT INTO users (clerk_user_id, brand_id, email, first_name, last_name, role, created_at, updated_at)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -510,7 +604,6 @@ def main():
             )
             user_id = cur.fetchone()[0]
 
-            # Create coach profile
             cur.execute(
                 """INSERT INTO coaches
                    (user_id, brand_id, bio, city, state, years_experience,
@@ -544,31 +637,31 @@ def main():
             print(f"  Error inserting {c['email']}: {e}")
             continue
 
-    # Print summary
+    # ── Summary ─────────────────────────────────────────────────────────────
     cur.execute("SELECT COUNT(*) FROM coaches")
     total = cur.fetchone()[0]
 
     print(f"\nDone! Inserted {inserted}/{NUM_COACHES} coaches ({skipped} skipped as duplicates).")
     print(f"Total coaches in DB: {total}")
 
-    # Distribution stats
-    print("\n── Archetype distribution (by specialty) ──")
-    cur.execute("""
-        SELECT s.specialty, COUNT(*)
-        FROM coaches, jsonb_array_elements_text(specialties) AS s(specialty)
-        GROUP BY s.specialty
-        ORDER BY COUNT(*) DESC
-        LIMIT 15
-    """)
+    cur.execute("SELECT city, state, COUNT(*) FROM coaches GROUP BY city, state ORDER BY COUNT(*) DESC LIMIT 15")
+    print("\nTop 15 cities:")
     for row in cur.fetchall():
-        print(f"  {row[0]}: {row[1]}")
+        print(f"  {row[0]}, {row[1]}: {row[2]}")
 
     cur.execute("SELECT AVG(years_experience), MIN(years_experience), MAX(years_experience) FROM coaches")
     avg, mn, mx = cur.fetchone()
     print(f"\nExperience: avg={avg:.1f} yrs, min={mn}, max={mx}")
 
-    cur.execute("SELECT state, COUNT(*) FROM coaches GROUP BY state ORDER BY COUNT(*) DESC LIMIT 10")
-    print("\nTop 10 states:")
+    cur.execute("""
+        SELECT c.name, COUNT(*)
+        FROM coaches, jsonb_array_elements(certifications) AS c(cert),
+             jsonb_extract_path_text(c.cert, 'name') AS c(name)
+        GROUP BY c.name
+        ORDER BY COUNT(*) DESC
+        LIMIT 15
+    """)
+    print("\nTop 15 certs:")
     for row in cur.fetchall():
         print(f"  {row[0]}: {row[1]}")
 
@@ -576,5 +669,5 @@ def main():
 
 
 if __name__ == "__main__":
-    print(f"Seeding {NUM_COACHES} additional diverse coach profiles...\n")
+    print(f"Seeding {NUM_COACHES} demo coach profiles (targeted + random)...\n")
     main()

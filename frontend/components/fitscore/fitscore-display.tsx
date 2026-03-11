@@ -19,53 +19,54 @@ const SCORE_DESCRIPTIONS = {
   certification_score: {
     name: "Certifications",
     description: "Match between required/preferred certifications",
-    icon: "📜",
   },
   experience_score: {
     name: "Experience",
     description: "Years of professional experience vs requirements",
-    icon: "⭐",
   },
   availability_score: {
     name: "Availability",
     description: "Schedule overlap with required time slots",
-    icon: "📅",
   },
   location_score: {
     name: "Location",
     description: "Geographic proximity to job location",
-    icon: "📍",
   },
   culture_score: {
     name: "Cultural Fit",
     description: "Alignment with coaching style and values",
-    icon: "💚",
   },
   engagement_score: {
     name: "Engagement",
     description: "Profile completeness and activity",
-    icon: "🔥",
   },
 };
 
 function getScoreColor(score: number): string {
-  if (score >= 0.8) return "bg-green-500";
-  if (score >= 0.6) return "bg-blue-500";
-  if (score >= 0.4) return "bg-yellow-500";
-  return "bg-red-500";
+  if (score >= 0.8) return "bg-primary";
+  if (score >= 0.6) return "bg-primary/70";
+  if (score >= 0.4) return "bg-amber-400";
+  return "bg-red-400";
 }
 
 function getScoreTextColor(score: number): string {
-  if (score >= 0.8) return "text-green-700";
-  if (score >= 0.6) return "text-blue-700";
-  if (score >= 0.4) return "text-yellow-700";
-  return "text-red-700";
+  if (score >= 0.8) return "text-primary";
+  if (score >= 0.6) return "text-primary/80";
+  if (score >= 0.4) return "text-amber-600";
+  return "text-red-500";
+}
+
+function getScoreRingColor(score: number): string {
+  if (score >= 0.8) return "text-primary";
+  if (score >= 0.6) return "text-primary/70";
+  if (score >= 0.4) return "text-amber-400";
+  return "text-red-400";
 }
 
 export function FitScoreDisplay({ totalScore, breakdown, showDetails = true }: FitScoreDisplayProps) {
   const scorePercentage = Math.round(totalScore * 100);
-  const scoreColor = getScoreColor(totalScore);
   const scoreTextColor = getScoreTextColor(totalScore);
+  const scoreRingColor = getScoreRingColor(totalScore);
 
   return (
     <div className="space-y-4">
@@ -78,20 +79,20 @@ export function FitScoreDisplay({ totalScore, breakdown, showDetails = true }: F
               cy="40"
               r="36"
               stroke="currentColor"
-              strokeWidth="8"
+              strokeWidth="6"
               fill="none"
-              className="text-zinc-200"
+              className="text-muted/50"
             />
             <circle
               cx="40"
               cy="40"
               r="36"
               stroke="currentColor"
-              strokeWidth="8"
+              strokeWidth="6"
               fill="none"
               strokeDasharray={`${2 * Math.PI * 36}`}
               strokeDashoffset={`${2 * Math.PI * 36 * (1 - totalScore)}`}
-              className={scoreColor.replace('bg-', 'text-')}
+              className={scoreRingColor}
               strokeLinecap="round"
             />
           </svg>
@@ -116,7 +117,7 @@ export function FitScoreDisplay({ totalScore, breakdown, showDetails = true }: F
       {/* Detailed Breakdown */}
       {showDetails && (
         <div className="space-y-3">
-          <div className="text-sm font-semibold">Score Breakdown</div>
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Score Breakdown</div>
           {Object.entries(breakdown).map(([key, value]) => {
             const info = SCORE_DESCRIPTIONS[key as keyof FitScoreBreakdown];
             const scoreValue = Math.round(value * 100);
@@ -125,21 +126,17 @@ export function FitScoreDisplay({ totalScore, breakdown, showDetails = true }: F
             return (
               <div key={key} className="space-y-1">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="flex items-center gap-2">
-                    <span>{info.icon}</span>
-                    <span className="font-medium">{info.name}</span>
-                  </span>
+                  <span className="font-medium">{info.name}</span>
                   <span className={`font-semibold ${getScoreTextColor(value)}`}>
                     {scoreValue}%
                   </span>
                 </div>
-                <div className="w-full bg-zinc-200 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-1.5">
                   <div
-                    className={`h-2 rounded-full ${barColor}`}
+                    className={`h-1.5 rounded-full transition-all ${barColor}`}
                     style={{ width: `${scoreValue}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">{info.description}</p>
               </div>
             );
           })}
@@ -151,7 +148,7 @@ export function FitScoreDisplay({ totalScore, breakdown, showDetails = true }: F
 
 export function FitScoreCard({ totalScore, breakdown }: Omit<FitScoreDisplayProps, 'showDetails'>) {
   return (
-    <Card>
+    <Card className="border-0 shadow-sm">
       <CardHeader>
         <CardTitle>FitScore Analysis</CardTitle>
         <CardDescription>

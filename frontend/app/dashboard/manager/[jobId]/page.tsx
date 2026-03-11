@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CandidateList } from "@/components/matches/candidate-list";
 import { jobAPI } from "@/lib/api-client";
@@ -25,30 +25,19 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
   const token = await getToken();
   const jobId = parseInt(resolvedParams.jobId);
 
-  console.log(`JobDetailPage: params.jobId=${resolvedParams.jobId}, parsed jobId=${jobId}, isNaN=${isNaN(jobId)}`);
-
   let job: any = null;
   let candidates: any[] = [];
 
   try {
     if (token) {
-      // Validate jobId is a valid number
       if (isNaN(jobId)) {
-        console.error(`Invalid job ID: ${resolvedParams.jobId} (parsed as ${jobId})`);
         throw new Error("Invalid job ID");
       }
 
-      console.log(`Fetching job ${jobId}...`);
-
-      // Fetch job details
       job = await jobAPI.get(jobId, token);
-      console.log(`Job fetched successfully:`, job?.id, job?.title);
 
-      // Fetch candidates for this job
-      console.log(`Fetching candidates for job ${jobId}...`);
       const candidatesData = await jobAPI.getCandidates(jobId, 20, token);
 
-      // Transform candidates to match CandidateList interface
       candidates = (candidatesData.candidates || []).map((c: any) => ({
         coach_id: c.coach.id,
         first_name: c.coach.user?.first_name || "Coach",
@@ -74,22 +63,20 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
           engagement_score: c.score_breakdown?.engagement_score || 0,
         },
       }));
-      console.log(`Found ${candidates.length} candidates`);
     }
   } catch (error: any) {
     console.error("Error fetching job or candidates:", error);
-    console.error("Error details:", error.message, error.status, error.details);
   }
 
   if (!job) {
     return (
       <div className="max-w-4xl mx-auto">
-        <Card>
+        <Card className="border-0 shadow-sm">
           <CardContent className="pt-6">
-            <div className="text-center py-12">
+            <div className="text-center py-16">
               <h3 className="text-xl font-semibold mb-2">Job Not Found</h3>
-              <p className="text-muted-foreground mb-4">
-                The job you're looking for doesn't exist or you don't have access to it.
+              <p className="text-muted-foreground mb-6">
+                The job you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.
               </p>
               <Link href="/dashboard/manager">
                 <Button>Back to Jobs</Button>
@@ -103,16 +90,17 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-4">
-        <Link href="/dashboard/manager">
-          <Button variant="ghost" size="sm">
-            ← Back to Jobs
-          </Button>
+      <div className="mb-6">
+        <Link href="/dashboard/manager" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Back to Jobs
         </Link>
       </div>
 
       {job.brand_banner_url && (
-        <div className="relative w-full h-48 rounded-lg overflow-hidden mb-6">
+        <div className="relative w-full h-48 rounded-2xl overflow-hidden mb-6 shadow-sm">
           <Image
             src={job.brand_banner_url}
             alt={`${job.title} banner`}
@@ -122,20 +110,22 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
         </div>
       )}
 
-      <div className="mb-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-border/50 p-8 mb-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-bold mb-2">{job.title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">{job.title}</h1>
             <p className="text-muted-foreground">
-              {job.city}, {job.state} • {job.role_type}
+              {job.city}, {job.state} &middot; {job.role_type}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Link href={`/dashboard/manager/${job.id}/edit`}>
               <Button variant="outline">Edit Job</Button>
             </Link>
-            <span className={`px-3 py-2 rounded-md text-sm font-medium ${
-              job.is_active ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-700'
+            <span className={`px-3 py-2 rounded-lg text-sm font-medium ${
+              job.is_active
+                ? 'bg-primary/10 text-primary'
+                : 'bg-muted text-muted-foreground'
             }`}>
               {job.is_active ? 'Active' : 'Inactive'}
             </span>
@@ -145,19 +135,19 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
 
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle>Job Description</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
                 {job.description}
               </p>
             </CardContent>
           </Card>
 
           <div className="mt-6">
-            <h2 className="text-2xl font-bold mb-4">
+            <h2 className="text-2xl font-bold tracking-tight mb-4">
               Matched Candidates ({candidates.length})
             </h2>
             <CandidateList candidates={candidates} />
@@ -165,26 +155,26 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
         </div>
 
         <div className="space-y-6">
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle>Requirements</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
               <div>
-                <h4 className="font-semibold mb-2">Experience</h4>
-                <p className="text-sm">
+                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Experience</h4>
+                <p className="text-sm font-medium">
                   Minimum {job.min_experience} {job.min_experience === 1 ? 'year' : 'years'}
                 </p>
               </div>
 
               {job.required_certifications && job.required_certifications.length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-2">Required Certifications</h4>
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Required Certifications</h4>
                   <div className="flex flex-wrap gap-2">
                     {job.required_certifications.map((cert: string) => (
                       <span
                         key={cert}
-                        className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-medium"
+                        className="px-2.5 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-medium"
                       >
                         {cert}
                       </span>
@@ -195,12 +185,12 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
 
               {job.preferred_certifications && job.preferred_certifications.length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-2">Preferred Certifications</h4>
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Preferred Certifications</h4>
                   <div className="flex flex-wrap gap-2">
                     {job.preferred_certifications.map((cert: string) => (
                       <span
                         key={cert}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium"
+                        className="px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium"
                       >
                         {cert}
                       </span>
@@ -211,12 +201,12 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
 
               {job.required_availability && job.required_availability.length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-2">Required Availability</h4>
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Required Availability</h4>
                   <div className="flex flex-wrap gap-2">
                     {job.required_availability.map((slot: string) => (
                       <span
                         key={slot}
-                        className="px-2 py-1 bg-zinc-100 rounded-md text-xs font-medium"
+                        className="px-2.5 py-1 bg-muted rounded-lg text-xs font-medium"
                       >
                         {slot}
                       </span>
@@ -227,20 +217,20 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle>FitScore Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="font-semibold mb-2">Weighting Preset</h4>
-                <p className="text-sm capitalize">
+                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Weighting Preset</h4>
+                <p className="text-sm font-medium capitalize">
                   {job.weighting_preset.replace('_', ' ')}
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Threshold</h4>
-                <p className="text-sm">
+                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Threshold</h4>
+                <p className="text-sm font-medium text-primary">
                   {(job.fitscore_threshold * 100).toFixed(0)}% minimum
                 </p>
               </div>
@@ -248,12 +238,12 @@ export default async function JobDetailPage({ params }: { params: Promise<{ jobI
           </Card>
 
           {job.compensation_type && (
-            <Card>
+            <Card className="border-0 shadow-sm">
               <CardHeader>
                 <CardTitle>Compensation</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm">
+                <p className="text-sm font-medium">
                   {job.compensation_type === "hourly" && "$"}
                   {job.compensation_min}
                   {job.compensation_max && ` - $${job.compensation_max}`}

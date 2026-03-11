@@ -2,7 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { JobMatchList } from "@/components/matches/job-match-list";
 import { coachAPI } from "@/lib/api-client";
@@ -66,12 +66,17 @@ export default async function CoachMatchesPage() {
   if (!coachId) {
     return (
       <div className="max-w-4xl mx-auto">
-        <Card>
+        <Card className="border-0 shadow-sm">
           <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🎯</div>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
               <h3 className="text-xl font-semibold mb-2">Create Your Profile First</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 You need to create a coach profile before you can see job matches
               </p>
               <Link href="/dashboard/coach/edit">
@@ -87,7 +92,7 @@ export default async function CoachMatchesPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">My Job Matches</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-1">My Job Matches</h1>
         <p className="text-muted-foreground">
           Jobs ranked by FitScore based on your profile
         </p>
@@ -96,52 +101,27 @@ export default async function CoachMatchesPage() {
       <JobMatchList matches={matches} />
 
       {matches.length > 0 && (
-        <div className="grid md:grid-cols-3 gap-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                FitScore Range
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0.0 - 1.0</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Higher scores mean better matches
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid md:grid-cols-3 gap-4 mt-8">
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-border/50">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">FitScore Range</div>
+            <div className="text-2xl font-bold">0.0 - 1.0</div>
+            <p className="text-xs text-muted-foreground mt-1">Higher scores mean better matches</p>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Match Factors
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm space-y-1">
-                <li>✓ Certifications</li>
-                <li>✓ Experience</li>
-                <li>✓ Availability</li>
-                <li>✓ Location</li>
-                <li>✓ Cultural Fit</li>
-                <li>✓ Engagement</li>
-              </ul>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-border/50">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Match Factors</div>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {["Certs", "Experience", "Availability", "Location", "Culture", "Engagement"].map(f => (
+                <span key={f} className="px-2 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-medium">{f}</span>
+              ))}
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Threshold Filter
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">≥ 0.60</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Only jobs you're qualified for
-              </p>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-border/50">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Threshold</div>
+            <div className="text-2xl font-bold text-primary">&ge; 60%</div>
+            <p className="text-xs text-muted-foreground mt-1">Only qualified matches shown</p>
+          </div>
         </div>
       )}
     </div>

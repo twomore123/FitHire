@@ -34,17 +34,20 @@ interface JobMatchListProps {
 export function JobMatchList({ matches }: JobMatchListProps) {
   if (matches.length === 0) {
     return (
-      <Card>
+      <Card className="border-0 shadow-sm">
         <CardContent className="pt-6">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🎯</div>
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                <line x1="9" y1="9" x2="9.01" y2="9" />
+                <line x1="15" y1="9" x2="15.01" y2="9" />
+              </svg>
+            </div>
             <h3 className="text-xl font-semibold mb-2">No Matches Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Complete your profile to start seeing job matches
-            </p>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Once your profile is verified and complete, you'll see your top 20 job matches here,
-              ranked by FitScore with detailed breakdowns showing why each job is a good fit.
+            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              Complete your profile to start seeing job matches. Once verified, you&apos;ll see your top 20 matches ranked by FitScore.
             </p>
           </div>
         </CardContent>
@@ -55,38 +58,38 @@ export function JobMatchList({ matches }: JobMatchListProps) {
   return (
     <div className="space-y-4">
       {matches.map((match, index) => (
-        <Card key={match.job_id} className="hover:shadow-lg transition-shadow">
+        <Card key={match.job_id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader>
             <div className="flex justify-between items-start">
               <div className="flex gap-4 items-start flex-1">
                 {match.brand_logo_url ? (
-                  <div className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-zinc-200 shadow-md flex-shrink-0 bg-white">
+                  <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-border/50 flex-shrink-0 bg-white shadow-sm">
                     <Image
                       src={match.brand_logo_url}
                       alt={`${match.title} logo`}
                       fill
-                      className="object-contain p-2"
+                      className="object-contain p-1.5"
                     />
                   </div>
                 ) : (
-                  <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-300 flex items-center justify-center flex-shrink-0 shadow-md">
-                    <span className="text-3xl font-bold text-purple-600">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl font-bold text-primary">
                       {match.title?.charAt(0) || "J"}
                     </span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                       #{index + 1}
                     </span>
-                    <CardTitle className="truncate">{match.title}</CardTitle>
+                    <CardTitle className="truncate text-lg">{match.title}</CardTitle>
                   </div>
-                  <CardDescription className="mb-1">
-                    {match.city}, {match.state} • {match.role_type}
+                  <CardDescription>
+                    {match.city}, {match.state} &middot; {match.role_type}
                   </CardDescription>
                   {match.compensation_type && match.compensation_min && (
-                    <div className="text-xs font-medium text-green-600">
+                    <div className="text-xs font-medium text-primary mt-0.5">
                       ${match.compensation_min}
                       {match.compensation_max && ` - $${match.compensation_max}`}
                       {match.compensation_type === "hourly" && "/hr"}
@@ -97,7 +100,7 @@ export function JobMatchList({ matches }: JobMatchListProps) {
                 </div>
               </div>
               <div className="text-right flex-shrink-0 ml-4">
-                <div className="text-4xl font-bold bg-gradient-to-br from-green-600 to-green-500 bg-clip-text text-transparent">
+                <div className="text-4xl font-bold text-primary">
                   {Math.round(match.fitscore * 100)}
                 </div>
                 <div className="text-xs text-muted-foreground font-medium">FitScore</div>
@@ -108,7 +111,7 @@ export function JobMatchList({ matches }: JobMatchListProps) {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Job Description</h4>
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Description</h4>
                   <p className="text-sm text-muted-foreground line-clamp-3">
                     {match.description}
                   </p>
@@ -116,7 +119,7 @@ export function JobMatchList({ matches }: JobMatchListProps) {
 
                 {match.compensation_type && (
                   <div>
-                    <h4 className="font-semibold mb-2">Compensation</h4>
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Compensation</h4>
                     <p className="text-sm">
                       {match.compensation_type === "hourly" && "$"}
                       {match.compensation_min}

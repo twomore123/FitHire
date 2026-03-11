@@ -1,52 +1,33 @@
+import Image from "next/image";
+
 interface BrandLogoProps {
+  variant?: "fithire" | "coach360" | "icon";
   size?: "sm" | "md" | "lg";
   className?: string;
 }
 
-const sizes = {
-  sm: "text-lg",
-  md: "text-2xl",
-  lg: "text-4xl",
+const dimensions = {
+  fithire: { sm: { w: 120, h: 38 }, md: { w: 160, h: 50 }, lg: { w: 220, h: 69 } },
+  coach360: { sm: { w: 140, h: 70 }, md: { w: 200, h: 100 }, lg: { w: 300, h: 150 } },
+  icon: { sm: { w: 32, h: 32 }, md: { w: 48, h: 48 }, lg: { w: 72, h: 72 } },
 };
 
-export function BrandLogo({ size = "md", className = "" }: BrandLogoProps) {
+const srcs = {
+  fithire: "/logos/fithire-by-coach360.png",
+  coach360: "/logos/coach360-wordmark.png",
+  icon: "/logos/360-icon-green.png",
+};
+
+export function BrandLogo({ variant = "fithire", size = "md", className = "" }: BrandLogoProps) {
+  const { w, h } = dimensions[variant][size];
   return (
-    <span className={`font-light tracking-tight ${sizes[size]} ${className}`}>
-      coach
-      <span className="relative inline-flex items-center ml-0.5">
-        <span className="font-light">3</span>
-        <span className="relative">
-          <span className="font-light">6</span>
-        </span>
-        <span className="relative">
-          <span className="font-light">0</span>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="absolute -top-[0.15em] -right-[0.05em] w-[0.55em] h-[0.55em]"
-          >
-            <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-            <path
-              d="M14.5 8.5C14.5 8.5 13 10 12 12C11 14 10.5 16 10.5 16"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M12 12C12 12 13.5 11 15 11.5"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M12 12C12 12 10.5 10.5 9 11"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </span>
-      </span>
-    </span>
+    <Image
+      src={srcs[variant]}
+      alt={variant === "icon" ? "Coach 360" : variant === "coach360" ? "Coach 360" : "FitHire by Coach 360"}
+      width={w}
+      height={h}
+      className={className}
+      priority
+    />
   );
 }

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { jobAPI } from "@/lib/api-client";
+import { DeleteJobButton } from "@/components/delete-job-button";
 
 // Disable caching for this page - each user should see their own data
 export const dynamic = 'force-dynamic';
@@ -155,6 +156,7 @@ export default async function ManagerJobsPage() {
                   <Link href={`/dashboard/manager/${job.id}/edit`}>
                     <Button size="sm" variant="outline">Edit</Button>
                   </Link>
+                  <DeleteJobButton jobId={job.id} jobTitle={job.title} />
                 </div>
               </CardContent>
             </Card>

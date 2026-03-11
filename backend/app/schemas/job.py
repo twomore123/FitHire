@@ -1,13 +1,15 @@
 """Pydantic schemas for Job endpoints"""
 
-from typing import Optional, List, Dict
 from datetime import datetime
 from decimal import Decimal
+from typing import Dict, List, Optional
+
 from pydantic import BaseModel, Field, field_validator
 
 
 class JobCreate(BaseModel):
     """Schema for creating a new job listing"""
+
     location_id: int = Field(..., description="Location ID for this job")
     title: str = Field(..., min_length=1, max_length=200, description="Job title")
     description: str = Field(..., description="Full job description")
@@ -15,22 +17,19 @@ class JobCreate(BaseModel):
     # Role requirements
     role_type: str = Field(
         ...,
-        description="Role type: Group Fitness Instructor, Personal Trainer, Yoga Instructor, Pilates Instructor"
+        description="Role type: Group Fitness Instructor, Personal Trainer, Yoga Instructor, Pilates Instructor",
     )
     required_certifications: List[str] = Field(
-        default_factory=list,
-        description="Required certifications (must have all)"
+        default_factory=list, description="Required certifications (must have all)"
     )
     preferred_certifications: List[str] = Field(
-        default_factory=list,
-        description="Preferred certifications (bonus points)"
+        default_factory=list, description="Preferred certifications (bonus points)"
     )
     min_experience: int = Field(0, ge=0, description="Minimum years of experience")
 
     # Schedule requirements
     required_availability: List[str] = Field(
-        default_factory=list,
-        description="Required time slots (e.g., 'Mon AM', 'Wed PM')"
+        default_factory=list, description="Required time slots (e.g., 'Mon AM', 'Wed PM')"
     )
 
     # Location
@@ -38,10 +37,7 @@ class JobCreate(BaseModel):
     state: str = Field(..., max_length=2, description="2-letter state code")
 
     # Cultural fit
-    culture_tags: List[str] = Field(
-        default_factory=list,
-        description="Desired cultural fit tags"
-    )
+    culture_tags: List[str] = Field(default_factory=list, description="Desired cultural fit tags")
 
     # Compensation (optional for Phase 1)
     compensation_type: Optional[str] = Field(None, description="hourly, salary, per_class")
@@ -55,33 +51,32 @@ class JobCreate(BaseModel):
     # FitScore configuration
     weighting_preset: str = Field(
         "balanced",
-        description="Weighting preset: balanced, experience_heavy, culture_heavy, availability_focused"
+        description="Weighting preset: balanced, experience_heavy, culture_heavy, availability_focused",
     )
     custom_weights: Optional[Dict[str, float]] = Field(
-        None,
-        description="Custom weighting configuration (overrides preset if provided)"
+        None, description="Custom weighting configuration (overrides preset if provided)"
     )
     fitscore_threshold: Decimal = Field(
         Decimal("0.60"),
         ge=Decimal("0.40"),
         le=Decimal("0.80"),
-        description="Minimum FitScore threshold (0.40-0.80)"
+        description="Minimum FitScore threshold (0.40-0.80)",
     )
 
-    @field_validator('role_type')
+    @field_validator("role_type")
     @classmethod
     def validate_role_type(cls, v: str) -> str:
         allowed_roles = [
             "Group Fitness Instructor",
             "Personal Trainer",
             "Yoga Instructor",
-            "Pilates Instructor"
+            "Pilates Instructor",
         ]
         if v not in allowed_roles:
             raise ValueError(f"role_type must be one of: {', '.join(allowed_roles)}")
         return v
 
-    @field_validator('weighting_preset')
+    @field_validator("weighting_preset")
     @classmethod
     def validate_preset(cls, v: str) -> str:
         allowed_presets = ["balanced", "experience_heavy", "culture_heavy", "availability_focused"]
@@ -92,6 +87,7 @@ class JobCreate(BaseModel):
 
 class JobUpdate(BaseModel):
     """Schema for updating an existing job listing"""
+
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
 
@@ -120,7 +116,7 @@ class JobUpdate(BaseModel):
 
     status: Optional[str] = None
 
-    @field_validator('role_type')
+    @field_validator("role_type")
     @classmethod
     def validate_role_type(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
@@ -129,13 +125,13 @@ class JobUpdate(BaseModel):
             "Group Fitness Instructor",
             "Personal Trainer",
             "Yoga Instructor",
-            "Pilates Instructor"
+            "Pilates Instructor",
         ]
         if v not in allowed_roles:
             raise ValueError(f"role_type must be one of: {', '.join(allowed_roles)}")
         return v
 
-    @field_validator('weighting_preset')
+    @field_validator("weighting_preset")
     @classmethod
     def validate_preset(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
@@ -145,7 +141,7 @@ class JobUpdate(BaseModel):
             raise ValueError(f"weighting_preset must be one of: {', '.join(allowed_presets)}")
         return v
 
-    @field_validator('status')
+    @field_validator("status")
     @classmethod
     def validate_status(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
@@ -158,6 +154,7 @@ class JobUpdate(BaseModel):
 
 class JobResponse(BaseModel):
     """Schema for job listing responses"""
+
     id: int
     created_by: int
     location_id: int
@@ -200,6 +197,7 @@ class JobResponse(BaseModel):
 
 class JobListResponse(BaseModel):
     """Schema for paginated job list"""
+
     jobs: List[JobResponse]
     total: int
     page: int

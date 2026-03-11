@@ -199,7 +199,7 @@ export default async function CoachProfilePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Profile Completeness</CardTitle>
           </CardHeader>

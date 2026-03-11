@@ -1,8 +1,9 @@
 """Pydantic schemas for Coach endpoints"""
 
-from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from typing import List, Optional
+
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class UserInfo(BaseModel):
@@ -18,6 +19,7 @@ class UserInfo(BaseModel):
 
 class CertificationItem(BaseModel):
     """Individual certification"""
+
     name: str = Field(..., description="Certification name (e.g., 'NASM-CPT', 'ACE')")
     issued_date: Optional[str] = Field(None, description="ISO date when issued")
     expiry_date: Optional[str] = Field(None, description="ISO date when expires")
@@ -26,36 +28,26 @@ class CertificationItem(BaseModel):
 
 class CoachCreate(BaseModel):
     """Schema for creating a new coach profile"""
+
     location_id: int = Field(..., description="Location ID this coach belongs to")
     city: str = Field(..., description="City where coach is based")
     state: str = Field(..., max_length=2, description="2-letter state code")
 
     # Professional details
     certifications: List[CertificationItem] = Field(
-        default_factory=list,
-        description="List of certifications"
+        default_factory=list, description="List of certifications"
     )
     years_experience: int = Field(0, ge=0, description="Years of professional experience")
 
     # Availability
     available_times: List[str] = Field(
-        default_factory=list,
-        description="Available time slots (e.g., 'Mon AM', 'Wed PM')"
+        default_factory=list, description="Available time slots (e.g., 'Mon AM', 'Wed PM')"
     )
 
     # Cultural fit tags
-    lifestyle_tags: List[str] = Field(
-        default_factory=list,
-        description="Lifestyle approach tags"
-    )
-    movement_tags: List[str] = Field(
-        default_factory=list,
-        description="Movement style tags"
-    )
-    instruction_tags: List[str] = Field(
-        default_factory=list,
-        description="Instruction style tags"
-    )
+    lifestyle_tags: List[str] = Field(default_factory=list, description="Lifestyle approach tags")
+    movement_tags: List[str] = Field(default_factory=list, description="Movement style tags")
+    instruction_tags: List[str] = Field(default_factory=list, description="Instruction style tags")
 
     # Media
     profile_photo_url: Optional[HttpUrl] = None
@@ -67,6 +59,7 @@ class CoachCreate(BaseModel):
 
 class CoachUpdate(BaseModel):
     """Schema for updating an existing coach profile"""
+
     city: Optional[str] = None
     state: Optional[str] = Field(None, max_length=2)
 
@@ -87,6 +80,7 @@ class CoachUpdate(BaseModel):
 
 class CoachResponse(BaseModel):
     """Schema for coach profile responses"""
+
     id: int
     user_id: int
     brand_id: int
@@ -127,6 +121,7 @@ class CoachResponse(BaseModel):
 
 class CoachListResponse(BaseModel):
     """Schema for paginated coach list"""
+
     coaches: List[CoachResponse]
     total: int
     page: int

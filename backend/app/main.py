@@ -2,10 +2,10 @@
 
 import logging
 import traceback
+
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
@@ -34,13 +34,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logger.error(f"Validation errors: {exc.errors()}")
     logger.error(f"Request body details: {exc.body}")
 
-    return JSONResponse(
-        status_code=422,
-        content={
-            "detail": exc.errors(),
-            "body": exc.body
-        }
-    )
+    return JSONResponse(status_code=422, content={"detail": exc.errors(), "body": exc.body})
+
 
 # Custom CORS middleware to handle Vercel deployment URLs
 class CustomCORSMiddleware(BaseHTTPMiddleware):
@@ -92,8 +87,7 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
 
             # If there's an exception, create an error response with CORS headers
             response = JSONResponse(
-                status_code=500,
-                content={"detail": "Internal server error", "error": str(e)}
+                status_code=500, content={"detail": "Internal server error", "error": str(e)}
             )
 
         # Add CORS headers to response (both success and error responses)
@@ -102,6 +96,7 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
             response.headers["Access-Control-Allow-Credentials"] = "true"
 
         return response
+
 
 # Add custom CORS middleware
 app.add_middleware(CustomCORSMiddleware)
@@ -142,9 +137,9 @@ async def root():
 
 
 # API v1 routes
+from app.api.v1.routes.admin import router as admin_router
 from app.api.v1.routes.coaches import router as coaches_router
 from app.api.v1.routes.jobs import router as jobs_router
-from app.api.v1.routes.admin import router as admin_router
 from app.api.v1.routes.upload import router as upload_router
 
 app.include_router(coaches_router, prefix="/api/v1")

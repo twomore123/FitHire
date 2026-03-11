@@ -1,23 +1,24 @@
 """Coach CRUD and matching endpoints"""
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_
-from datetime import datetime
 import logging
-import httpx
+from datetime import datetime
+from typing import Optional
 
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_
+from sqlalchemy.orm import Session, joinedload
+
+from app.config import settings
+from app.core.fitscore.engine import FitScoreEngine
 from app.db.session import get_db
+from app.models.brand import Location
 from app.models.coach import Coach
 from app.models.job import Job
-from app.models.brand import Location
 from app.models.user import User
-from app.schemas.coach import CoachCreate, CoachUpdate, CoachResponse, CoachListResponse
+from app.schemas.coach import CoachCreate, CoachListResponse, CoachResponse, CoachUpdate
 from app.schemas.match import CoachMatchesResponse, CoachMatchResult, FitScoreBreakdown
 from app.utils.auth import get_current_user
-from app.core.fitscore.engine import FitScoreEngine
-from app.config import settings
 
 router = APIRouter(prefix="/coaches", tags=["coaches"])
 logger = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ async def get_or_create_user(db: Session, current_user: dict) -> User:
         if not clerk_user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token: missing user ID"
+                detail="Invalid authentication token: missing user ID",
             )
 
         # Try to find existing user
@@ -86,23 +87,23 @@ async def get_or_create_user(db: Session, current_user: dict) -> User:
 
             # Extract email - try JWT first, then Clerk API, finally use fallback
             email = (
-                current_user.get("email") or
-                current_user.get("email_address") or
-                current_user.get("primary_email") or
-                clerk_user_info.get("email") or
-                f"{clerk_user_id}@unknown.com"
+                current_user.get("email")
+                or current_user.get("email_address")
+                or current_user.get("primary_email")
+                or clerk_user_info.get("email")
+                or f"{clerk_user_id}@unknown.com"
             )
 
             first_name = (
-                current_user.get("given_name") or
-                current_user.get("first_name") or
-                clerk_user_info.get("first_name")
+                current_user.get("given_name")
+                or current_user.get("first_name")
+                or clerk_user_info.get("first_name")
             )
 
             last_name = (
-                current_user.get("family_name") or
-                current_user.get("last_name") or
-                clerk_user_info.get("last_name")
+                current_user.get("family_name")
+                or current_user.get("last_name")
+                or clerk_user_info.get("last_name")
             )
 
             logger.info(f"Creating new user with email: {email}")
@@ -113,7 +114,7 @@ async def get_or_create_user(db: Session, current_user: dict) -> User:
                 first_name=first_name,
                 last_name=last_name,
                 role="coach",  # Default role for new users
-                brand_id=1  # Default brand for Phase 1
+                brand_id=1,  # Default brand for Phase 1
             )
             db.add(user)
             db.commit()
@@ -175,7 +176,11 @@ def calculate_profile_completeness(coach_data: dict) -> float:
         completed += 1
     if coach_data.get("available_times") and len(coach_data["available_times"]) > 0:
         completed += 1
-    if coach_data.get("lifestyle_tags") or coach_data.get("movement_tags") or coach_data.get("instruction_tags"):
+    if (
+        coach_data.get("lifestyle_tags")
+        or coach_data.get("movement_tags")
+        or coach_data.get("instruction_tags")
+    ):
         completed += 1
 
     return round(completed / total_fields, 2)
@@ -185,7 +190,7 @@ def calculate_profile_completeness(coach_data: dict) -> float:
 async def create_coach(
     coach_data: CoachCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Create a new coach profile
@@ -197,7 +202,7 @@ async def create_coach(
     if not location:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Location {coach_data.location_id} not found"
+            detail=f"Location {coach_data.location_id} not found",
         )
 
     # Get or create user from Clerk authentication
@@ -217,9 +222,15 @@ async def create_coach(
         existing_coach.lifestyle_tags = coach_data.lifestyle_tags
         existing_coach.movement_tags = coach_data.movement_tags
         existing_coach.instruction_tags = coach_data.instruction_tags
-        existing_coach.profile_image_url = str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None
-        existing_coach.verified_video_url = str(coach_data.verified_video_url) if coach_data.verified_video_url else None
-        existing_coach.profile_completeness = calculate_profile_completeness(coach_data.model_dump())
+        existing_coach.profile_image_url = (
+            str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None
+        )
+        existing_coach.verified_video_url = (
+            str(coach_data.verified_video_url) if coach_data.verified_video_url else None
+        )
+        existing_coach.profile_completeness = calculate_profile_completeness(
+            coach_data.model_dump()
+        )
         existing_coach.last_updated = datetime.now()
         existing_coach.verified_at = datetime.now()  # Auto-verify for Phase 1 testing
 
@@ -243,11 +254,15 @@ async def create_coach(
         lifestyle_tags=coach_data.lifestyle_tags,
         movement_tags=coach_data.movement_tags,
         instruction_tags=coach_data.instruction_tags,
-        profile_image_url=str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None,
-        verified_video_url=str(coach_data.verified_video_url) if coach_data.verified_video_url else None,
+        profile_image_url=(
+            str(coach_data.profile_photo_url) if coach_data.profile_photo_url else None
+        ),
+        verified_video_url=(
+            str(coach_data.verified_video_url) if coach_data.verified_video_url else None
+        ),
         profile_completeness=completeness,
         last_updated=datetime.now(),
-        verified_at=datetime.now()  # Auto-verify for Phase 1 testing
+        verified_at=datetime.now(),  # Auto-verify for Phase 1 testing
     )
 
     db.add(new_coach)
@@ -259,9 +274,7 @@ async def create_coach(
 
 @router.get("/{coach_id}", response_model=CoachResponse)
 async def get_coach(
-    coach_id: int,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    coach_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
 ):
     """
     Get a single coach profile by ID
@@ -276,8 +289,7 @@ async def get_coach(
     coach = db.query(Coach).options(joinedload(Coach.user)).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Coach {coach_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Coach {coach_id} not found"
         )
 
     # Allow access if:
@@ -290,7 +302,7 @@ async def get_coach(
     if not (is_own_profile or is_manager_or_admin):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to view this coach profile"
+            detail="You do not have permission to view this coach profile",
         )
 
     return coach
@@ -304,7 +316,7 @@ async def list_coaches(
     role_type: Optional[str] = Query(None, description="Filter by role type"),
     status: Optional[str] = Query(None, description="Filter by status"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """
     List coaches with pagination and filtering
@@ -336,7 +348,7 @@ async def list_coaches(
         total=total,
         page=page,
         page_size=page_size,
-        total_pages=(total + page_size - 1) // page_size
+        total_pages=(total + page_size - 1) // page_size,
     )
 
 
@@ -345,7 +357,7 @@ async def update_coach(
     coach_id: int,
     coach_update: CoachUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Update a coach profile
@@ -359,15 +371,14 @@ async def update_coach(
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Coach {coach_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Coach {coach_id} not found"
         )
 
     # Verify that this coach belongs to the current user
     if coach.user_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to update this coach profile"
+            detail="You do not have permission to update this coach profile",
         )
 
     # Update fields if provided (only fields that exist in Coach model)
@@ -426,7 +437,7 @@ async def get_coach_matches(
     coach_id: int,
     limit: int = Query(20, ge=1, le=20, description="Maximum number of matches to return"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Get top job matches for a coach
@@ -441,25 +452,22 @@ async def get_coach_matches(
     coach = db.query(Coach).filter(Coach.id == coach_id).first()
     if not coach:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Coach {coach_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Coach {coach_id} not found"
         )
 
     # Verify that this coach belongs to the current user
     if coach.user_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to view matches for this coach profile"
+            detail="You do not have permission to view matches for this coach profile",
         )
 
     # Get all open jobs in the same city (Phase 1: exact city match only)
-    jobs = db.query(Job).filter(
-        and_(
-            Job.is_active == True,
-            Job.city == coach.city,
-            Job.state == coach.state
-        )
-    ).all()
+    jobs = (
+        db.query(Job)
+        .filter(and_(Job.is_active, Job.city == coach.city, Job.state == coach.state))
+        .all()
+    )
 
     # Calculate FitScore for each job
     engine = FitScoreEngine()
@@ -475,7 +483,9 @@ async def get_coach_matches(
         "lifestyle_tags": coach.lifestyle_tags,
         "movement_tags": coach.movement_tags,
         "instruction_tags": coach.instruction_tags,
-        "profile_completeness": float(coach.profile_completeness) if coach.profile_completeness else 0.0,
+        "profile_completeness": (
+            float(coach.profile_completeness) if coach.profile_completeness else 0.0
+        ),
         "last_updated": coach.last_updated.isoformat() if coach.last_updated else None,
         "verified_video_url": coach.verified_video_url,
     }
@@ -492,20 +502,13 @@ async def get_coach_matches(
         }
 
         score = engine.calculate_match(
-            coach_data,
-            job_data,
-            preset=job.weighting_preset,
-            custom_weights=job.custom_weights
+            coach_data, job_data, preset=job.weighting_preset, custom_weights=job.custom_weights
         )
 
         # Only include if above threshold
         threshold = float(job.fitscore_threshold) if job.fitscore_threshold else 0.60
         if score.fitscore >= threshold:
-            matches.append({
-                "job": job,
-                "score": score,
-                "threshold": threshold
-            })
+            matches.append({"job": job, "score": score, "threshold": threshold})
 
     # Sort by FitScore descending
     matches.sort(key=lambda x: x["score"].fitscore, reverse=True)
@@ -516,24 +519,26 @@ async def get_coach_matches(
     # Format response
     match_results = []
     for rank, match in enumerate(matches, start=1):
-        match_results.append(CoachMatchResult(
-            job=match["job"],
-            fitscore=match["score"].fitscore,
-            score_breakdown=FitScoreBreakdown(
+        match_results.append(
+            CoachMatchResult(
+                job=match["job"],
                 fitscore=match["score"].fitscore,
-                cert_score=match["score"].cert_score,
-                experience_score=match["score"].experience_score,
-                availability_score=match["score"].availability_score,
-                location_score=match["score"].location_score,
-                culture_score=match["score"].culture_score,
-                engagement_score=match["score"].engagement_score,
-            ),
-            rank=rank
-        ))
+                score_breakdown=FitScoreBreakdown(
+                    fitscore=match["score"].fitscore,
+                    cert_score=match["score"].cert_score,
+                    experience_score=match["score"].experience_score,
+                    availability_score=match["score"].availability_score,
+                    location_score=match["score"].location_score,
+                    culture_score=match["score"].culture_score,
+                    engagement_score=match["score"].engagement_score,
+                ),
+                rank=rank,
+            )
+        )
 
     return CoachMatchesResponse(
         coach_id=coach_id,
         matches=match_results,
         total_matches=len(matches),
-        threshold=0.60  # Default threshold for display
+        threshold=0.60,  # Default threshold for display
     )

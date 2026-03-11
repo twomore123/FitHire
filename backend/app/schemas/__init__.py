@@ -1,11 +1,11 @@
 """Pydantic schemas for API requests and responses"""
 
-from app.schemas.coach import CoachCreate, CoachUpdate, CoachResponse, CoachListResponse
-from app.schemas.job import JobCreate, JobUpdate, JobResponse, JobListResponse
+from app.schemas.coach import CoachCreate, CoachListResponse, CoachResponse, CoachUpdate
+from app.schemas.job import JobCreate, JobListResponse, JobResponse, JobUpdate
 from app.schemas.match import (
-    FitScoreBreakdown,
-    CoachMatchResult,
     CoachMatchesResponse,
+    CoachMatchResult,
+    FitScoreBreakdown,
     JobCandidateResult,
     JobCandidatesResponse,
 )

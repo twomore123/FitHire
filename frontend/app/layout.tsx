@@ -3,8 +3,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FitHire - Fitness Professional Matching Platform",
-  description: "Connect fitness professional with opportunities through intelligent matching",
+  title: "Coach 360 - Fitness Professional Matching Platform",
+  description: "Connect fitness professionals with opportunities through intelligent matching",
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="antialiased">
+        <body className="antialiased" style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
           {children}
         </body>
       </html>

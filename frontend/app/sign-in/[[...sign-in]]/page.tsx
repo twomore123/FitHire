@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { SignIn } from "@clerk/nextjs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -19,6 +20,7 @@ export default function SignInPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-zinc-50 to-white">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
+            <Image src="/logos/360-icon-green.png" alt="Coach 360" width={72} height={72} className="mx-auto mb-5" priority />
             <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
             <p className="text-muted-foreground">
               Sign in as a {selectedRole === "coach" ? "Coach" : "Hiring Manager"}
@@ -49,6 +51,7 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-zinc-50 to-white">
       <div className="w-full max-w-lg px-4">
         <div className="text-center mb-8">
+          <Image src="/logos/fithire-by-coach360.png" alt="FitHire by Coach 360" width={240} height={75} className="mx-auto mb-6" priority />
           <h1 className="text-3xl font-bold mb-2">Welcome to FitHire</h1>
           <p className="text-muted-foreground">
             How are you using FitHire?

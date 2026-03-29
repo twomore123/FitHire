@@ -63,17 +63,17 @@ export function JobMatchList({ matches }: JobMatchListProps) {
             <div className="flex justify-between items-start">
               <div className="flex gap-4 items-start flex-1">
                 {match.brand_logo_url ? (
-                  <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-border/50 flex-shrink-0 bg-white shadow-sm">
+                  <div className="relative w-28 h-28 rounded-2xl overflow-hidden border-2 border-border/60 flex-shrink-0 bg-white shadow-md">
                     <Image
                       src={match.brand_logo_url}
                       alt={`${match.title} logo`}
                       fill
-                      className="object-contain p-1.5"
+                      className="object-contain p-3"
                     />
                   </div>
                 ) : (
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl font-bold text-primary">
+                  <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border-2 border-primary/15 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <span className="text-4xl font-bold text-primary">
                       {match.title?.charAt(0) || "J"}
                     </span>
                   </div>

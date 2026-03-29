@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BrandLogo } from "@/components/brand-logo";
@@ -10,7 +11,7 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <Link href="/">
-            <BrandLogo size="md" />
+            <BrandLogo variant="fithire" size="sm" />
           </Link>
           <div className="flex gap-3 items-center">
             <Link href="/sign-in">
@@ -33,9 +34,14 @@ export default function Home() {
 
         <div className="relative container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              Intelligent fitness hiring
+            <div className="flex justify-center mb-10">
+              <Image
+                src="/logos/360-icon-green.png"
+                alt="Coach 360"
+                width={120}
+                height={120}
+                priority
+              />
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-[1.1]">
@@ -160,7 +166,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t bg-secondary/30">
         <div className="container mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <BrandLogo size="sm" />
+          <BrandLogo variant="coach360" size="sm" />
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Coach 360. All rights reserved.
           </p>
